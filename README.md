@@ -1,8 +1,17 @@
 # schul-tinder
 
-Kleine Web-App mit **Registrierung** und **Login**. Läuft mit **Python** und **SQLite** — gut geeignet für einen **Raspberry Pi** (ARM, wenig RAM, kein extra Datenbank-Server).
+**Normale Webseiten** (HTML/CSS/JS) im Ordner `web/` — Start, Login, Registrierung, Dashboard. Damit Konten und Passwörter sicher bleiben, läuft dazu ein kleiner **Python-Server** (`app.py`), der nur Formulare, Session und die Datenbank übernimmt.
 
-## Auf dem Raspberry Pi starten
+| Pfad | Inhalt |
+|------|--------|
+| `web/index.html` | Startseite |
+| `web/login.html` | Login-Formular |
+| `web/register.html` | Registrierung |
+| `web/dashboard.html` | Bereich nach Login (wird nur ausgeliefert, wenn du eingeloggt bist) |
+
+Die Seiten kannst du im Editor bearbeiten wie jede andere Website. **Nicht** nur die HTML-Dateien auf einen rein statischen Webspace legen, wenn du Login brauchst — dann ginge die Anmeldung nicht. Auf dem Pi: Server starten, im Browser die URLs öffnen (siehe unten).
+
+## Auf dem Raspberry Pi hosten
 
 ```bash
 sudo apt update
@@ -15,18 +24,18 @@ export FLASK_SECRET_KEY="$(python3 -c 'import secrets; print(secrets.token_hex(3
 python3 app.py
 ```
 
-Im Browser auf dem Pi: `http://127.0.0.1:5000`  
-Vom Handy/PC im gleichen WLAN (Pi-IP ermitteln mit `hostname -I`): `http://<PI-IP>:5000`
+- Auf dem Pi: `http://127.0.0.1:5000/` → zeigt `web/index.html`
+- Im WLAN: `http://<PI-IP>:5000/` (IP z. B. mit `hostname -I`)
 
-Der Server bindet standardmäßig an alle Interfaces (`0.0.0.0`), damit du im Netzwerk zugreifen kannst.
+Der Server bindet an `0.0.0.0`, damit andere Geräte zugreifen können.
 
 ## Konfiguration (optional)
 
-| Umgebungsvariable   | Bedeutung                          |
-|--------------------|-------------------------------------|
-| `FLASK_SECRET_KEY` | Geheimer Schlüssel für Sessions (in Produktion setzen!) |
-| `FLASK_HOST`       | Standard: `0.0.0.0`                 |
-| `FLASK_PORT`       | Standard: `5000`                    |
-| `FLASK_DEBUG`      | `true` nur zum Entwickeln           |
+| Umgebungsvariable   | Bedeutung |
+|--------------------|-----------|
+| `FLASK_SECRET_KEY` | Pflicht sinnvoll ab „mehr als nur ich“ — sicherer Session-Schlüssel |
+| `FLASK_HOST`       | Standard: `0.0.0.0` |
+| `FLASK_PORT`       | Standard: `5000` |
+| `FLASK_DEBUG`      | `true` nur zum Entwickeln |
 
-Benutzer werden in `users.db` (SQLite) gespeichert.
+Benutzer liegen in `users.db` (SQLite).
