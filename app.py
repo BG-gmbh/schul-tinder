@@ -31,12 +31,12 @@ def chat_subject_key(raw):
 
 
 def parse_subject_levels(form):
-    g = form.get("level_german")
-    m = form.get("level_math")
-    e = form.get("level_english")
-    if g not in LEVELS or m not in LEVELS or e not in LEVELS:
+    lv_g = form.get("level_german")
+    lv_m = form.get("level_math")
+    lv_e = form.get("level_english")
+    if lv_g not in LEVELS or lv_m not in LEVELS or lv_e not in LEVELS:
         return None
-    return g, m, e
+    return lv_g, lv_m, lv_e
 
 
 def get_db():
@@ -65,6 +65,27 @@ def _ensure_subject_columns(db):
 
 
 def init_db():
+    if os.path.isfile(DATABASE) and os.path.getsize(DATABASE) == 0:
+        try:
+            os.remove(DATABASE)
+        except OSError:
+            pass
+    if os.path.isfile(DATABASE):
+        try:
+            with closing(sqlite3.connect(DATABASE)) as probe:
+                chk = probe.execute("PRAGMA quick_check").fetchone()
+                if chk is None or str(chk[0]).lower() != "ok":
+                    raise sqlite3.DatabaseError("quick_check failed")
+        except sqlite3.Error:
+            bad = DATABASE + ".broken"
+            try:
+                os.replace(DATABASE, bad)
+            except OSError:
+                try:
+                    os.remove(DATABASE)
+                except OSError:
+                    pass
+
     with closing(sqlite3.connect(DATABASE)) as db:
         db.execute(
             """
