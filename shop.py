@@ -427,6 +427,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
                 now,
             ),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         db.commit()
         new_id = cur.lastrowid
         row = db.execute(
@@ -496,6 +498,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
                 item_id,
             ),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         if cur.rowcount != 1:
             db.commit()
             return jsonify(error="not_found"), 404
@@ -620,6 +624,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
             """,
             (email, display_name or None, school),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         db.commit()
         rid = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         row = db.execute(
@@ -681,6 +687,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
             """,
             (email, display_name or None, school, active, tid),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         if cur.rowcount != 1:
             db.commit()
             return jsonify(error="not_found"), 404

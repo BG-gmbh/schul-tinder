@@ -125,6 +125,7 @@ def init_db():
                     pass
 
     with closing(sqlite3.connect(DATABASE)) as db:
+        db.row_factory = sqlite3.Row
         db.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -140,6 +141,7 @@ def init_db():
         _ensure_role_column(db)
         _ensure_banned_column(db)
         _ensure_user_teacher_email_prefs(db)
+        _ensure_schools(db)
         _ensure_chat_tables(db)
         _ensure_invite_codes(db)
         _ensure_app_settings(db)
@@ -147,6 +149,7 @@ def init_db():
         from shop import ensure_shop_table
 
         ensure_shop_table(db)
+        _ensure_schools(db)
         _ensure_admin_subject_scores(db)
 
 
@@ -185,6 +188,32 @@ def _ensure_user_teacher_email_prefs(db):
         db.execute(
             "ALTER TABLE users ADD COLUMN notify_laden_email INTEGER NOT NULL DEFAULT 0"
         )
+    db.commit()
+
+
+def _ensure_schools(db):
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schools (
+            name TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+        """
+    )
+    for table in ("users", "invite_codes", "shop_items", "teacher_contacts"):
+        try:
+            rows = db.execute(
+                f"SELECT DISTINCT school FROM {table} WHERE TRIM(school) != ''"
+            ).fetchall()
+        except sqlite3.Error:
+            rows = []
+        for row in rows:
+            school = (row["school"] or "").strip()
+            if school:
+                db.execute(
+                    "INSERT OR IGNORE INTO schools (name) VALUES (?)",
+                    (school,),
+                )
     db.commit()
 
 
@@ -538,6 +567,16 @@ def can_access_user(db, user_id):
     return row["role"] != "dev" and (row["school"] or "") == admin_school(db)
 
 
+def school_names_for_admin(db):
+    if is_dev_session():
+        rows = db.execute(
+            "SELECT name FROM schools ORDER BY name COLLATE NOCASE"
+        ).fetchall()
+        return [r["name"] for r in rows]
+    school = admin_school(db)
+    return [school] if school else []
+
+
 def _user_count(db):
     return int(db.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"])
 
@@ -760,6 +799,8 @@ def admin_create_user():
         school = admin_school(db)
     if len(school) > 120:
         return redirect("/admin.html?flash=invalid_school")
+    if school:
+        db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
     try:
         db.execute(
             """
@@ -860,6 +901,8 @@ def admin_user_update(user_id):
         "UPDATE users SET role = ?, school = ? WHERE id = ?",
         (role, school, user_id),
     )
+    if school:
+        db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
     if user_id == session.get("user_id"):
         session["role"] = role
         session["school"] = school
@@ -867,6 +910,31 @@ def admin_user_update(user_id):
         db.execute("DELETE FROM api_tokens WHERE user_id = ?", (user_id,))
     db.commit()
     return jsonify(ok=True)
+
+
+@app.route("/api/admin/schools", methods=["GET"])
+@admin_api
+def admin_schools_list():
+    db = get_db()
+    return jsonify(schools=school_names_for_admin(db))
+
+
+@app.route("/api/admin/schools", methods=["POST"])
+@admin_api
+def admin_schools_create():
+    if not is_dev_session():
+        return jsonify(error="forbidden"), 403
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name or len(name) > 120:
+        return jsonify(error="invalid_school"), 400
+    db = get_db()
+    try:
+        db.execute("INSERT INTO schools (name) VALUES (?)", (name,))
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify(error="duplicate"), 409
+    return jsonify(ok=True, name=name)
 
 
 @app.route("/api/admin/app-settings", methods=["GET"])
@@ -1292,6 +1360,8 @@ def admin_invite_create():
     if len(school) > 120:
         return jsonify(error="invalid_school"), 400
     db = get_db()
+    if school:
+        db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
     uid = session["user_id"]
     for _ in range(12):
         code = secrets.token_hex(6)

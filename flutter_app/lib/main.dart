@@ -1219,7 +1219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-enum AdminSection { users, codes, chats, ratings, shop, teachers, logo }
+enum AdminSection { users, codes, chats, ratings, shop, teachers, logo, schools }
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({
@@ -1247,11 +1247,14 @@ class _AdminScreenState extends State<AdminScreen> {
   List<dynamic> ratings = const [];
   List<dynamic> shopItems = const [];
   List<dynamic> teachers = const [];
+  List<String> schools = const [];
   String schoolLogoUrl = '';
+  String selectedLogoSchool = '';
 
   @override
   void initState() {
     super.initState();
+    _loadSchools();
     _load();
   }
 
@@ -1281,42 +1284,48 @@ class _AdminScreenState extends State<AdminScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SegmentedButton<AdminSection>(
-              segments: const [
-                ButtonSegment(
+              segments: [
+                const ButtonSegment(
                   value: AdminSection.users,
                   icon: Icon(Icons.people),
                   label: Text('Nutzer'),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: AdminSection.codes,
                   icon: Icon(Icons.vpn_key),
                   label: Text('Codes'),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: AdminSection.chats,
                   icon: Icon(Icons.forum),
                   label: Text('Chats'),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: AdminSection.ratings,
                   icon: Icon(Icons.star),
                   label: Text('Bewertungen'),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: AdminSection.shop,
                   icon: Icon(Icons.storefront),
                   label: Text('Laden'),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: AdminSection.teachers,
                   icon: Icon(Icons.alternate_email),
                   label: Text('Lehrer'),
                 ),
-                ButtonSegment(
+                const ButtonSegment(
                   value: AdminSection.logo,
                   icon: Icon(Icons.image_outlined),
                   label: Text('Logo'),
                 ),
+                if (widget.isDev)
+                  const ButtonSegment(
+                    value: AdminSection.schools,
+                    icon: Icon(Icons.school_outlined),
+                    label: Text('Schulen'),
+                  ),
               ],
               selected: {section},
               onSelectionChanged: loading
@@ -1354,6 +1363,7 @@ class _AdminScreenState extends State<AdminScreen> {
       AdminSection.shop => _shopBody(),
       AdminSection.teachers => _teachersBody(),
       AdminSection.logo => _logoBody(),
+      AdminSection.schools => _schoolsBody(),
     };
   }
 
@@ -1550,6 +1560,26 @@ class _AdminScreenState extends State<AdminScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.isDev) ...[
+          DropdownButtonFormField<String>(
+            value: selectedLogoSchool.isEmpty ? null : selectedLogoSchool,
+            decoration: const InputDecoration(labelText: 'Schule'),
+            items: [
+              for (final school in schools)
+                DropdownMenuItem(value: school, child: Text(school)),
+            ],
+            onChanged: loading
+                ? null
+                : (value) {
+                    setState(() {
+                      selectedLogoSchool = value ?? '';
+                      schoolLogoUrl = '';
+                    });
+                    _load();
+                  },
+          ),
+          const SizedBox(height: 16),
+        ],
         if (schoolLogoUrl.isNotEmpty) ...[
           Align(
             alignment: Alignment.centerLeft,
@@ -1587,6 +1617,31 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _schoolsBody() {
+    if (!widget.isDev) return const Text('Nur fuer Devs.');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.icon(
+            onPressed: loading ? null : _createSchool,
+            icon: const Icon(Icons.add),
+            label: const Text('Schule hinzufügen'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (schools.isEmpty) const Text('Noch keine Schulen.'),
+        for (final school in schools)
+          AdminCard(
+            title: school,
+            subtitle: 'Schule',
+            leading: Icons.school_outlined,
+          ),
       ],
     );
   }
@@ -1641,7 +1696,13 @@ class _AdminScreenState extends State<AdminScreen> {
         AdminSection.ratings => await widget.api.getJson('/api/admin/ratings'),
         AdminSection.shop => await widget.api.getJson('/api/admin/shop'),
         AdminSection.teachers => await widget.api.getJson('/api/admin/teachers'),
-        AdminSection.logo => await widget.api.getJson('/api/admin/app-settings'),
+        AdminSection.logo => await widget.api.getJson(
+            '/api/admin/app-settings',
+            widget.isDev && selectedLogoSchool.isNotEmpty
+                ? {'school': selectedLogoSchool}
+                : null,
+          ),
+        AdminSection.schools => await widget.api.getJson('/api/admin/schools'),
       };
       if (!mounted) return;
       setState(() {
@@ -1666,6 +1727,12 @@ class _AdminScreenState extends State<AdminScreen> {
             break;
           case AdminSection.logo:
             schoolLogoUrl = data['school_logo_url']?.toString() ?? '';
+            selectedLogoSchool = data['school']?.toString() ?? selectedLogoSchool;
+            break;
+          case AdminSection.schools:
+            schools = (data['schools'] as List? ?? const [])
+                .map((item) => item.toString())
+                .toList();
             break;
         }
       });
@@ -1674,6 +1741,21 @@ class _AdminScreenState extends State<AdminScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> _loadSchools() async {
+    try {
+      final data = await widget.api.getJson('/api/admin/schools');
+      if (!mounted) return;
+      setState(() {
+        schools = (data['schools'] as List? ?? const [])
+            .map((item) => item.toString())
+            .toList();
+        if (widget.isDev && selectedLogoSchool.isEmpty && schools.isNotEmpty) {
+          selectedLogoSchool = schools.first;
+        }
+      });
+    } catch (_) {}
   }
 
   Future<void> _run(String success, Future<void> Function() action) async {
@@ -1739,6 +1821,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _editUserAccess(Map<String, dynamic> user) async {
+    await _loadSchools();
     final result = await _userAccessDialog(user);
     if (result == null) return;
     await _run('Nutzer gespeichert', () async {
@@ -1747,6 +1830,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _createInviteCode() async {
+    await _loadSchools();
     final result = await _inviteCodeDialog();
     if (result == null) return;
     await _run('Code erstellt', () async {
@@ -1764,6 +1848,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _editLogo() async {
+    await _loadSchools();
     final value = await _textDialog(
       title: 'Schul-Logo',
       label: 'Bild-URL',
@@ -1778,9 +1863,23 @@ class _AdminScreenState extends State<AdminScreen> {
     await _run('Logo gespeichert', () async {
       await widget.api.postJson('/api/admin/app-settings', {
         'school_logo_url': url,
+        if (widget.isDev) 'school': selectedLogoSchool,
       });
     });
     await widget.onAppSettingsSaved();
+  }
+
+  Future<void> _createSchool() async {
+    final name = await _textDialog(
+      title: 'Schule hinzufügen',
+      label: 'Schulname',
+      maxLength: 120,
+    );
+    if (name == null || name.trim().isEmpty) return;
+    await _run('Schule angelegt', () async {
+      await widget.api.postJson('/api/admin/schools', {'name': name.trim()});
+    });
+    await _loadSchools();
   }
 
   Future<void> _deleteChat(Map<String, dynamic> chat) async {
@@ -1810,6 +1909,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _editShopItem([Map<String, dynamic>? item]) async {
+    await _loadSchools();
     final result = await _shopDialog(item);
     if (result == null) return;
     await _run(item == null ? 'Artikel erstellt' : 'Artikel gespeichert', () async {
@@ -1830,6 +1930,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _editTeacher([Map<String, dynamic>? teacher]) async {
+    await _loadSchools();
     final result = await _teacherDialog(teacher);
     if (result == null) return;
     await _run(
@@ -1962,7 +2063,10 @@ class _AdminScreenState extends State<AdminScreen> {
     Map<String, dynamic> user,
   ) async {
     var role = user['role']?.toString() ?? 'user';
-    final school = TextEditingController(text: user['school']?.toString() ?? '');
+    var school = user['school']?.toString() ?? '';
+    if (school.isNotEmpty && !schools.contains(school)) {
+      schools = [...schools, school];
+    }
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -1984,10 +2088,16 @@ class _AdminScreenState extends State<AdminScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: school,
-                maxLength: 120,
+              DropdownButtonFormField<String>(
+                value: school.isEmpty ? null : school,
                 decoration: const InputDecoration(labelText: 'Schule'),
+                items: [
+                  for (final value in schools)
+                    DropdownMenuItem(value: value, child: Text(value)),
+                ],
+                onChanged: (value) {
+                  if (value != null) setDialogState(() => school = value);
+                },
               ),
             ],
           ),
@@ -1999,7 +2109,7 @@ class _AdminScreenState extends State<AdminScreen> {
             FilledButton(
               onPressed: () => Navigator.pop(context, {
                 'role': role,
-                'school': school.text.trim(),
+                'school': school,
               }),
               child: const Text('Speichern'),
             ),
@@ -2007,12 +2117,11 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       ),
     );
-    school.dispose();
     return result;
   }
 
   Future<Map<String, dynamic>?> _inviteCodeDialog() async {
-    final school = TextEditingController();
+    var school = widget.isDev && schools.isNotEmpty ? schools.first : '';
     var role = 'user';
     final roles = widget.isDev
         ? const ['user', 'admin', 'dev']
@@ -2025,17 +2134,20 @@ class _AdminScreenState extends State<AdminScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: school,
-                maxLength: 120,
-                decoration: InputDecoration(
-                  labelText: 'Schule',
-                  helperText: widget.isDev
-                      ? 'Leer lassen für keine Schule'
-                      : 'Wird bei Admins automatisch gesetzt',
-                ),
-                enabled: widget.isDev,
-              ),
+              if (widget.isDev)
+                DropdownButtonFormField<String>(
+                  value: school.isEmpty ? null : school,
+                  decoration: const InputDecoration(labelText: 'Schule'),
+                  items: [
+                    for (final value in schools)
+                      DropdownMenuItem(value: value, child: Text(value)),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => school = value);
+                  },
+                )
+              else
+                const Text('Schule wird automatisch gesetzt.'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: role,
@@ -2057,7 +2169,7 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
-                'school': school.text.trim(),
+                'school': school,
                 'role': role,
               }),
               child: const Text('Erstellen'),
@@ -2066,7 +2178,6 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       ),
     );
-    school.dispose();
     return result;
   }
 
@@ -2078,7 +2189,10 @@ class _AdminScreenState extends State<AdminScreen> {
     final priceHint = TextEditingController(
       text: item?['price_hint']?.toString() ?? '',
     );
-    final school = TextEditingController(text: item?['school']?.toString() ?? '');
+    var school = item?['school']?.toString() ?? '';
+    if (school.isNotEmpty && !schools.contains(school)) {
+      schools = [...schools, school];
+    }
     final points = TextEditingController(
       text: (item?['points_price'] ?? 0).toString(),
     );
@@ -2117,13 +2231,16 @@ class _AdminScreenState extends State<AdminScreen> {
                   decoration: const InputDecoration(labelText: 'Punktepreis'),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: school,
-                  maxLength: 120,
-                  decoration: const InputDecoration(
-                    labelText: 'Schule',
-                    helperText: 'Leer lassen für alle Schulen',
-                  ),
+                DropdownButtonFormField<String>(
+                  value: school.isEmpty ? null : school,
+                  decoration: const InputDecoration(labelText: 'Schule'),
+                  items: [
+                    for (final value in schools)
+                      DropdownMenuItem(value: value, child: Text(value)),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => school = value);
+                  },
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -2151,7 +2268,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'description': description.text.trim(),
                 'price_hint': priceHint.text.trim(),
                 'points_price': int.tryParse(points.text.trim()) ?? 0,
-                'school': school.text.trim(),
+                'school': school,
                 'sort_order': int.tryParse(sort.text.trim()) ?? 0,
                 'active': active,
               }),
@@ -2164,7 +2281,6 @@ class _AdminScreenState extends State<AdminScreen> {
     title.dispose();
     description.dispose();
     priceHint.dispose();
-    school.dispose();
     points.dispose();
     sort.dispose();
     return result;
@@ -2175,9 +2291,10 @@ class _AdminScreenState extends State<AdminScreen> {
     final name = TextEditingController(
       text: teacher?['display_name']?.toString() ?? '',
     );
-    final school = TextEditingController(
-      text: teacher?['school']?.toString() ?? '',
-    );
+    var school = teacher?['school']?.toString() ?? '';
+    if (school.isNotEmpty && !schools.contains(school)) {
+      schools = [...schools, school];
+    }
     var active = teacher?['active'] != false;
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -2198,10 +2315,16 @@ class _AdminScreenState extends State<AdminScreen> {
                 decoration: const InputDecoration(labelText: 'Name'),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: school,
-                maxLength: 120,
+              DropdownButtonFormField<String>(
+                value: school.isEmpty ? null : school,
                 decoration: const InputDecoration(labelText: 'Schule'),
+                items: [
+                  for (final value in schools)
+                    DropdownMenuItem(value: value, child: Text(value)),
+                ],
+                onChanged: (value) {
+                  if (value != null) setDialogState(() => school = value);
+                },
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -2220,7 +2343,7 @@ class _AdminScreenState extends State<AdminScreen> {
               onPressed: () => Navigator.pop(context, {
                 'email': email.text.trim(),
                 'display_name': name.text.trim(),
-                'school': school.text.trim(),
+                'school': school,
                 'active': active,
               }),
               child: const Text('Speichern'),
@@ -2231,7 +2354,6 @@ class _AdminScreenState extends State<AdminScreen> {
     );
     email.dispose();
     name.dispose();
-    school.dispose();
     return result;
   }
 }
