@@ -659,15 +659,28 @@ def scoped_user_where(db, table_alias="u"):
         return "", ()
     hidden_roles = hidden_roles_for_session()
     placeholders = ", ".join("?" for _ in hidden_roles)
-    return (
-        f" WHERE {table_alias}.school = ? AND {table_alias}.role NOT IN ({placeholders})",
-        (admin_school(db), *hidden_roles),
-    )
+    
+    current_role = session.get("role", "user")
+    conditions = f"{table_alias}.school = ? AND {table_alias}.role NOT IN ({placeholders})"
+    params = [admin_school(db), *hidden_roles]
+    
+    # Teachers: only see their assigned class
+    if current_role == "teacher":
+        teacher_row = db.execute(
+            "SELECT class_name FROM users WHERE id = ?",
+            (session.get("user_id"),),
+        ).fetchone()
+        teacher_class = (teacher_row["class_name"] or "").strip() if teacher_row else ""
+        if teacher_class:
+            conditions += f" AND {table_alias}.class_name = ?"
+            params.append(teacher_class)
+    
+    return f" WHERE {conditions}", tuple(params)
 
 
 def can_access_user(db, user_id):
     row = db.execute(
-        "SELECT role, school FROM users WHERE id = ?",
+        "SELECT role, school, class_name FROM users WHERE id = ?",
         (user_id,),
     ).fetchone()
     if row is None:
@@ -675,10 +688,28 @@ def can_access_user(db, user_id):
     if is_dev_session():
         return True
     target_role = row["role"] if row["role"] in ROLES else "user"
-    return (
-        (row["school"] or "") == admin_school(db)
-        and role_rank(target_role) < role_rank(session.get("role"))
-    )
+    current_role = session.get("role", "user")
+    
+    # Rank check: can only manage lower-ranked users
+    if role_rank(target_role) >= role_rank(current_role):
+        return False
+    
+    # School check
+    if (row["school"] or "") != admin_school(db):
+        return False
+    
+    # Class check for teachers: can only manage their assigned class
+    if current_role == "teacher":
+        teacher_row = db.execute(
+            "SELECT class_name FROM users WHERE id = ?",
+            (session.get("user_id"),),
+        ).fetchone()
+        teacher_class = (teacher_row["class_name"] or "").strip() if teacher_row else ""
+        target_class = (row["class_name"] or "").strip()
+        if not teacher_class or teacher_class != target_class:
+            return False
+    
+    return True
 
 
 def school_names_for_admin(db):
@@ -1639,6 +1670,16 @@ def admin_invite_list():
     if not is_dev_session():
         where += " AND school = ?"
         params.append(admin_school(db))
+        # Teachers: only their class
+        if session.get("role") == "teacher":
+            teacher_row = db.execute(
+                "SELECT class_name FROM users WHERE id = ?",
+                (session.get("user_id"),),
+            ).fetchone()
+            teacher_class = (teacher_row["class_name"] or "").strip() if teacher_row else ""
+            if teacher_class:
+                where += " AND class_name = ?"
+                params.append(teacher_class)
     rows = db.execute(
         f"""
         SELECT code, school, class_name, role, created_at
@@ -1674,13 +1715,26 @@ def admin_invite_create():
         return jsonify(error="invalid_role"), 400
     if class_name is None:
         return jsonify(error="invalid_class"), 400
+    
+    db = get_db()
     if not is_dev_session():
-        school = admin_school(get_db())
+        school = admin_school(db)
         if role_rank(role) >= role_rank(session.get("role")):
             return jsonify(error="forbidden"), 403
+        # Teachers: can only create codes for their assigned class
+        if session.get("role") == "teacher":
+            teacher_row = db.execute(
+                "SELECT class_name FROM users WHERE id = ?",
+                (session.get("user_id"),),
+            ).fetchone()
+            teacher_class = (teacher_row["class_name"] or "").strip() if teacher_row else ""
+            if not teacher_class or teacher_class != class_name:
+                return jsonify(error="forbidden"), 403
+            # Teachers can only create user invites, not teacher/admin
+            if role != "user":
+                return jsonify(error="forbidden"), 403
     if len(school) > 120:
         return jsonify(error="invalid_school"), 400
-    db = get_db()
     if school:
         db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
     uid = session["user_id"]

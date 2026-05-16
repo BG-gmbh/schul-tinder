@@ -220,13 +220,14 @@ class UserProfile {
     return iconForRole(role);
   }
 
-  bool get isStaff => role == 'admin' || role == 'dev';
+  bool get isStaff => role == 'admin' || role == 'dev' || role == 'teacher';
 }
 
 IconData? iconForRole(String? role) {
   return switch (role) {
     'admin' => Icons.admin_panel_settings,
     'dev' => Icons.developer_mode,
+    'teacher' => Icons.school,
     _ => null,
   };
 }
@@ -354,7 +355,8 @@ class _AppShellState extends State<AppShell> {
       );
     }
 
-    final isAdmin = user!.role == 'admin' || user!.role == 'dev';
+    final isAdmin =
+        user!.role == 'admin' || user!.role == 'dev' || user!.role == 'teacher';
     final pages = [
       DashboardScreen(
         user: user!,
@@ -1077,7 +1079,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: _setAppointment,
                     icon: const Icon(Icons.edit_calendar),
                     label: Text(
-                      appointmentText.isEmpty ? 'Termin setzen' : 'Termin ändern',
+                      appointmentText.isEmpty
+                          ? 'Termin setzen'
+                          : 'Termin ändern',
                     ),
                   ),
                 if (isPro && appointmentText.isNotEmpty && !started && !ended)
@@ -1097,9 +1101,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     onPressed: () => _rateAppointment(yourRating),
                     icon: const Icon(Icons.star),
                     label: Text(
-                      yourRating == null
-                          ? 'Bewerten'
-                          : 'Bewertung ändern',
+                      yourRating == null ? 'Bewerten' : 'Bewertung ändern',
                     ),
                   ),
               ],
@@ -1151,13 +1153,14 @@ class _ChatScreenState extends State<ChatScreen> {
           title: const Text('Chat erstellen'),
           children: [
             for (final raw in creatableRooms)
-              SimpleDialogOption(
-                onPressed: () => Navigator.of(context).pop(
-                  raw as Map<String, dynamic>,
-                ),
-                child: Text(
-                  (raw as Map<String, dynamic>)['label'].toString(),
-                ),
+              Builder(
+                builder: (context) {
+                  final roomItem = raw as Map<String, dynamic>;
+                  return SimpleDialogOption(
+                    onPressed: () => Navigator.of(context).pop(roomItem),
+                    child: Text(roomItem['label'].toString()),
+                  );
+                },
               ),
           ],
         ),
@@ -1302,7 +1305,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final result = await _ratingDialog(current);
     if (result == null) return;
     if (result.rating < 4 && result.comment.trim().isEmpty) {
-      setState(() => error = 'Bei weniger als 4 Sternen ist ein Kommentar nötig.');
+      setState(
+          () => error = 'Bei weniger als 4 Sternen ist ein Kommentar nötig.');
       return;
     }
     try {
@@ -1845,7 +1849,9 @@ class _AdminScreenState extends State<AdminScreen> {
             subtitle: _userSubtitle(raw as Map<String, dynamic>),
             leading: raw['role'] == 'admin'
                 ? Icons.admin_panel_settings
-                : Icons.person_outline,
+                : raw['role'] == 'teacher'
+                    ? Icons.school
+                    : Icons.person_outline,
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1912,8 +1918,9 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _chatsBody() {
-    if (chats.isEmpty && !loading)
+    if (chats.isEmpty && !loading) {
       return const Text('Keine Chatdaten gefunden.');
+    }
     return Column(
       children: [
         for (final raw in chats)
@@ -2154,7 +2161,8 @@ class _AdminScreenState extends State<AdminScreen> {
     final items = <String>[];
     void add(String label, String levelKey, String verifiedKey) {
       if (user[levelKey] == 'pro') {
-        items.add('$label ${user[verifiedKey] == true ? 'verifiziert' : 'offen'}');
+        items.add(
+            '$label ${user[verifiedKey] == true ? 'verifiziert' : 'offen'}');
       }
     }
 
@@ -2188,7 +2196,8 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   String _durationLabel(Object? value) {
-    final seconds = value is int ? value : int.tryParse(value?.toString() ?? '');
+    final seconds =
+        value is int ? value : int.tryParse(value?.toString() ?? '');
     if (seconds == null || seconds < 0) return '';
     final minutes = (seconds / 60).round();
     if (minutes < 60) return '$minutes Min.';
@@ -2683,6 +2692,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 decoration: const InputDecoration(labelText: 'Rolle'),
                 items: const [
                   DropdownMenuItem(value: 'user', child: Text('User')),
+                  DropdownMenuItem(value: 'teacher', child: Text('Lehrer')),
                   DropdownMenuItem(value: 'admin', child: Text('Admin')),
                   DropdownMenuItem(value: 'dev', child: Text('Dev')),
                 ],
@@ -2832,8 +2842,9 @@ class _AdminScreenState extends State<AdminScreen> {
         : _defaultShopSchool();
     _ensureKnownSchool(school);
     var role = 'user';
-    final roles =
-        widget.isDev ? const ['user', 'admin', 'dev'] : const ['user', 'admin'];
+    final roles = widget.isDev
+        ? const ['user', 'teacher', 'admin', 'dev']
+        : const ['user', 'teacher', 'admin'];
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => StatefulBuilder(

@@ -13,15 +13,15 @@ import sys
 
 def main():
     if len(sys.argv) not in (2, 3):
-        print("Usage: python promote_admin.py USERNAME [admin|dev]", file=sys.stderr)
+        print("Usage: python promote_admin.py USERNAME [user|teacher|admin|dev]", file=sys.stderr)
         sys.exit(2)
     username = sys.argv[1].strip()
     role = sys.argv[2].strip() if len(sys.argv) == 3 else "admin"
     if not username:
         print("Username empty.", file=sys.stderr)
         sys.exit(2)
-    if role not in ("admin", "dev"):
-        print("Role must be 'admin' or 'dev'.", file=sys.stderr)
+    if role not in ("user", "teacher", "admin", "dev"):
+        print("Role must be 'user', 'teacher', 'admin' or 'dev'.", file=sys.stderr)
         sys.exit(2)
 
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.db")
