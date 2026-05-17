@@ -11,6 +11,7 @@ DESC_MAX = 4000
 PRICE_MAX = 120
 POINTS_PRICE_MAX = 1_000_000
 SCHOOL_MAX = 120
+CLASS_MAX = 20
 
 
 def ensure_shop_table(db):
@@ -35,6 +36,11 @@ def ensure_shop_table(db):
         )
     if "school" not in cols:
         db.execute("ALTER TABLE shop_items ADD COLUMN school TEXT NOT NULL DEFAULT ''")
+    if "class_name" not in cols:
+        db.execute(
+            "ALTER TABLE shop_items ADD COLUMN class_name TEXT NOT NULL DEFAULT ''"
+        )
+    db.execute("UPDATE shop_items SET class_name = lower(replace(trim(class_name), ' ', ''))")
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS teacher_contacts (
@@ -81,6 +87,10 @@ def _is_dev():
     return session.get("role") == "dev"
 
 
+def _is_teacher():
+    return session.get("role") == "teacher"
+
+
 def _session_school(db):
     if "school" in session:
         return session.get("school") or ""
@@ -93,13 +103,43 @@ def _session_school(db):
     return school
 
 
+def _session_class(db):
+    uid = session.get("user_id")
+    if not uid:
+        return ""
+    row = db.execute("SELECT class_name FROM users WHERE id = ?", (uid,)).fetchone()
+    return _normalize_class_name(row["class_name"] if row else "") or ""
+
+
 def _admin_item_school(db, raw_school):
     school = (raw_school or "").strip()
     return school if _is_dev() else _session_school(db)
 
 
+def _normalize_class_name(raw):
+    class_name = "".join((raw or "").strip().split()).lower()
+    if len(class_name) > CLASS_MAX:
+        return None
+    return class_name
+
+
+def _admin_item_class(db, raw_class):
+    if _is_teacher():
+        return _session_class(db)
+    return _normalize_class_name(raw_class)
+
+
 def _can_admin_access_school(db, school):
     return _is_dev() or (school or "") == _session_school(db)
+
+
+def _can_admin_access_item_scope(db, school, class_name):
+    if not _can_admin_access_school(db, school):
+        return False
+    if _is_teacher():
+        teacher_class = _session_class(db)
+        return bool(teacher_class) and (class_name or "") == teacher_class
+    return True
 
 
 def _user_points_sum(db, user_id):
@@ -107,7 +147,7 @@ def _user_points_sum(db, user_id):
         """
         SELECT COALESCE(SUM(points), 0) AS s
         FROM admin_subject_scores
-        WHERE user_id = ? AND subject IN ('german', 'math', 'english')
+        WHERE user_id = ? AND subject IN ('german', 'math', 'english', 'biology', 'pgw', 'spanish', 'art')
         """,
         (user_id,),
     ).fetchone()
@@ -120,7 +160,7 @@ def _deduct_user_points(db, user_id, amount, actor_user_id):
     rows = db.execute(
         """
         SELECT subject, points FROM admin_subject_scores
-        WHERE user_id = ? AND points > 0 AND subject IN ('german', 'math', 'english')
+        WHERE user_id = ? AND points > 0 AND subject IN ('german', 'math', 'english', 'biology', 'pgw', 'spanish', 'art')
         ORDER BY subject
         """,
         (user_id,),
@@ -223,6 +263,7 @@ def _row_to_item(r):
         "price_hint": r["price_hint"] or "",
         "points_price": pp,
         "school": r["school"] or "",
+        "class_name": r["class_name"] or "",
         "sort_order": int(r["sort_order"]),
         "active": bool(r["active"]),
         "updated_at": r["updated_at"],
@@ -246,18 +287,21 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         db = get_db()
         uid = session["user_id"]
         user_row = db.execute(
-            "SELECT school FROM users WHERE id = ?",
+            "SELECT school, class_name FROM users WHERE id = ?",
             (uid,),
         ).fetchone()
         user_school = (user_row["school"] if user_row else "") or ""
+        user_class = _normalize_class_name(user_row["class_name"] if user_row else "") or ""
         rows = db.execute(
             """
-            SELECT id, title, description, price_hint, points_price, school, sort_order, active, updated_at
+            SELECT id, title, description, price_hint, points_price, school, class_name, sort_order, active, updated_at
             FROM shop_items
-            WHERE active = 1 AND (trim(school) = '' OR school = ?)
+            WHERE active = 1
+              AND (trim(school) = '' OR school = ?)
+              AND (trim(class_name) = '' OR class_name = ?)
             ORDER BY sort_order ASC, id ASC
             """,
-            (user_school,),
+            (user_school, user_class),
         ).fetchall()
         bal = _user_points_sum(db, uid)
         db.commit()
@@ -282,7 +326,7 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
 
         row = db.execute(
             """
-            SELECT id, title, points_price, school, active FROM shop_items
+            SELECT id, title, points_price, school, class_name, active FROM shop_items
             WHERE id = ?
             """,
             (item_id,),
@@ -291,12 +335,17 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
             db.commit()
             return jsonify(error="not_found"), 404
         user_row = db.execute(
-            "SELECT school FROM users WHERE id = ?",
+            "SELECT school, class_name FROM users WHERE id = ?",
             (uid,),
         ).fetchone()
         user_school = (user_row["school"] if user_row else "") or ""
+        user_class = _normalize_class_name(user_row["class_name"] if user_row else "") or ""
         item_school = (row["school"] or "").strip()
+        item_class = _normalize_class_name(row["class_name"]) or ""
         if item_school and item_school != user_school:
+            db.commit()
+            return jsonify(error="not_found"), 404
+        if item_class and item_class != user_class:
             db.commit()
             return jsonify(error="not_found"), 404
         cost = int(row["points_price"] or 0)
@@ -370,9 +419,15 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         if not _is_dev():
             where = "WHERE school = ?"
             params.append(_session_school(db))
+            if _is_teacher():
+                teacher_class = _session_class(db)
+                if not teacher_class:
+                    return jsonify(items=[])
+                where += " AND class_name = ?"
+                params.append(teacher_class)
         rows = db.execute(
             f"""
-            SELECT id, title, description, price_hint, points_price, school, sort_order, active, updated_at
+            SELECT id, title, description, price_hint, points_price, school, class_name, sort_order, active, updated_at
             FROM shop_items
             {where}
             ORDER BY sort_order ASC, id ASC
@@ -398,6 +453,11 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         school = _admin_item_school(db, data.get("school"))
         if len(school) > SCHOOL_MAX:
             return jsonify(error="invalid_school"), 400
+        class_name = _admin_item_class(db, data.get("class_name"))
+        if class_name is None:
+            return jsonify(error="invalid_class"), 400
+        if _is_teacher() and not class_name:
+            return jsonify(error="forbidden"), 403
         try:
             points_price = int(data.get("points_price", 0))
         except (TypeError, ValueError):
@@ -413,8 +473,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         now = db.execute("SELECT datetime('now') AS now").fetchone()["now"]
         cur = db.execute(
             """
-            INSERT INTO shop_items (title, description, price_hint, points_price, school, sort_order, active, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO shop_items (title, description, price_hint, points_price, school, class_name, sort_order, active, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 title,
@@ -422,16 +482,19 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
                 price_hint,
                 points_price,
                 school,
+                class_name,
                 sort_order,
                 active,
                 now,
             ),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         db.commit()
         new_id = cur.lastrowid
         row = db.execute(
             """
-            SELECT id, title, description, price_hint, points_price, school, sort_order, active, updated_at
+            SELECT id, title, description, price_hint, points_price, school, class_name, sort_order, active, updated_at
             FROM shop_items WHERE id = ?
             """,
             (new_id,),
@@ -455,6 +518,11 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         school = _admin_item_school(db, data.get("school"))
         if len(school) > SCHOOL_MAX:
             return jsonify(error="invalid_school"), 400
+        class_name = _admin_item_class(db, data.get("class_name"))
+        if class_name is None:
+            return jsonify(error="invalid_class"), 400
+        if _is_teacher() and not class_name:
+            return jsonify(error="forbidden"), 403
         try:
             points_price = int(data.get("points_price", 0))
         except (TypeError, ValueError):
@@ -468,20 +536,22 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         active = 1 if data.get("active") in (True, "true", "1", 1) else 0
 
         existing = db.execute(
-            "SELECT school FROM shop_items WHERE id = ?",
+            "SELECT school, class_name FROM shop_items WHERE id = ?",
             (item_id,),
         ).fetchone()
         if existing is None:
             db.commit()
             return jsonify(error="not_found"), 404
-        if not _can_admin_access_school(db, existing["school"] or ""):
+        if not _can_admin_access_item_scope(
+            db, existing["school"] or "", existing["class_name"] or ""
+        ):
             db.commit()
             return jsonify(error="not_found"), 404
         now = db.execute("SELECT datetime('now') AS now").fetchone()["now"]
         cur = db.execute(
             """
             UPDATE shop_items
-            SET title = ?, description = ?, price_hint = ?, points_price = ?, school = ?, sort_order = ?, active = ?, updated_at = ?
+            SET title = ?, description = ?, price_hint = ?, points_price = ?, school = ?, class_name = ?, sort_order = ?, active = ?, updated_at = ?
             WHERE id = ?
             """,
             (
@@ -490,19 +560,22 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
                 price_hint,
                 points_price,
                 school,
+                class_name,
                 sort_order,
                 active,
                 now,
                 item_id,
             ),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         if cur.rowcount != 1:
             db.commit()
             return jsonify(error="not_found"), 404
         db.commit()
         row = db.execute(
             """
-            SELECT id, title, description, price_hint, points_price, school, sort_order, active, updated_at
+            SELECT id, title, description, price_hint, points_price, school, class_name, sort_order, active, updated_at
             FROM shop_items WHERE id = ?
             """,
             (item_id,),
@@ -514,10 +587,12 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
     def admin_shop_delete(item_id):
         db = get_db()
         existing = db.execute(
-            "SELECT school FROM shop_items WHERE id = ?",
+            "SELECT school, class_name FROM shop_items WHERE id = ?",
             (item_id,),
         ).fetchone()
-        if existing is None or not _can_admin_access_school(db, existing["school"] or ""):
+        if existing is None or not _can_admin_access_item_scope(
+            db, existing["school"] or "", existing["class_name"] or ""
+        ):
             db.commit()
             return jsonify(error="not_found"), 404
         cur = db.execute("DELETE FROM shop_items WHERE id = ?", (item_id,))
@@ -536,6 +611,12 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
         if not _is_dev():
             school_filter = "WHERE u.school = ?"
             params.append(_session_school(db))
+            if _is_teacher():
+                teacher_class = _session_class(db)
+                if not teacher_class:
+                    return jsonify(purchases=[])
+                school_filter += " AND u.class_name = ?"
+                params.append(teacher_class)
         rows = db.execute(
             f"""
             SELECT p.id, p.user_id, p.username, p.shop_item_id, p.item_title,
@@ -620,6 +701,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
             """,
             (email, display_name or None, school),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         db.commit()
         rid = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         row = db.execute(
@@ -681,6 +764,8 @@ def register_shop_routes(app, get_db, admin_api, login_required, login_required_
             """,
             (email, display_name or None, school, active, tid),
         )
+        if school:
+            db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
         if cur.rowcount != 1:
             db.commit()
             return jsonify(error="not_found"), 404

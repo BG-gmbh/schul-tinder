@@ -33,6 +33,7 @@
     <ul id="flash-banner"></ul>
     <section class="card">
       <h1>Hallo, <span id="welcome-name">…</span></h1>
+      <p id="class-summary" class="level-summary muted"></p>
       <p id="level-summary" class="level-summary muted"></p>
       <p class="muted" style="margin-top:1rem;">
         <a href="/laden.html">Laden</a> — Angebote und Materialien vom Team.
@@ -41,7 +42,7 @@
         Fachchat: <a href="/chat.html">Chat öffnen</a> — Noob/Mittel mit dabei, sobald mindestens ein <strong>Pro</strong> im Fach im Raum ist. Die Zahl „5“ gilt nur für Anwesende <em>ohne</em> Pro-Stufe; Pros zählen dafür nicht.
       </p>
       <p class="muted">
-        Fächer (Deutsch, Mathe, Englisch) änderst du unter
+        Fächer änderst du unter
         <a href="/settings.html">Einstellungen</a>.
       </p>
     </section>
@@ -57,13 +58,19 @@
     function setSummary(data) {
       var el = document.getElementById("level-summary");
       if (!el || !data) return;
-      el.textContent =
-        "Deutsch: " +
-        labelLevel(data.level_german) +
-        " · Mathe: " +
-        labelLevel(data.level_math) +
-        " · Englisch: " +
-        labelLevel(data.level_english);
+      var classEl = document.getElementById("class-summary");
+      if (classEl) {
+        classEl.textContent = data.class_name ? "Klasse: " + data.class_name : "Keine Klasse festgelegt";
+      }
+      el.textContent = [
+        "Deutsch: " + labelLevel(data.level_german),
+        "Mathe: " + labelLevel(data.level_math),
+        "Englisch: " + labelLevel(data.level_english),
+        "Biologie: " + labelLevel(data.level_biology),
+        "PGW: " + labelLevel(data.level_pgw),
+        "Spanisch: " + labelLevel(data.level_spanish),
+        "Kunst: " + labelLevel(data.level_art),
+      ].join(" · ");
     }
 
     fetch("/api/me", { credentials: "same-origin" })
@@ -79,7 +86,7 @@
         document.getElementById("welcome-name").textContent = data.username;
         var navName = document.getElementById("nav-username");
         if (navName) navName.textContent = data.username;
-        if (data.role === "admin") {
+        if (data.role === "teacher" || data.role === "admin" || data.role === "dev") {
           var adm = document.getElementById("nav-admin");
           if (adm) adm.classList.remove("hidden");
         }
