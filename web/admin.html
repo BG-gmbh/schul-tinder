@@ -149,6 +149,19 @@
     <section class="card tab-panel hidden" id="tab-codes" role="tabpanel">
       <h2 class="card-title">Einmal-Codes</h2>
       <p class="field-hint">Jeder Code funktioniert nur <strong>einmal</strong>. Empfänger trägt ihn unter <a href="/einladung.html">Mit Einladungscode</a> ein und wählt Benutzername und Passwort.</p>
+      <p class="muted" id="code-limit-status">Code-Lizenzen werden geladen...</p>
+      <form id="code-limit-form" class="stack-form hidden" autocomplete="off">
+        <div class="form-row two">
+          <label>Admin-Limit
+            <input id="code-limit-admin" type="number" min="0" step="1" value="0">
+          </label>
+          <label>Lehrer-Limit
+            <input id="code-limit-teacher" type="number" min="0" step="1" value="0">
+          </label>
+        </div>
+        <p class="field-hint">0 bedeutet unbegrenzt. Es zählen alle ungenutzten Codes, die von Admins oder Lehrern erstellt wurden.</p>
+        <p><button type="submit" class="btn btn-secondary">Limits speichern</button></p>
+      </form>
       <p><button type="button" class="btn" id="btn-new-code">Neuen Code erzeugen</button></p>
       <p class="muted" id="new-code-out" aria-live="polite"></p>
       <h3 class="subsection-title">Ungenutzte Codes</h3>
@@ -415,6 +428,10 @@
           if (key === "chats") {
             loadChats();
           }
+          if (key === "codes") {
+            loadCodes();
+            loadInviteCodeLimits();
+          }
           if (key === "shop") {
             loadShop();
             loadLadenPurchases();
@@ -500,12 +517,61 @@
                       return;
                     }
                     loadCodes();
+                    loadInviteCodeLimits();
                   });
               });
               li.appendChild(del);
               ul.appendChild(li);
             });
           });
+      }
+
+      function renderInviteCodeLimits(data) {
+        var status = document.getElementById("code-limit-status");
+        var form = document.getElementById("code-limit-form");
+        if (!status || !data) return;
+        var current = data.current || {};
+        var limit = Number(current.limit || 0);
+        var active = Number(current.active || 0);
+        if (data.can_edit) {
+          var admin = data.admin || {};
+          var teacher = data.teacher || {};
+          status.textContent =
+            "Lizenz-Pool: Admins " +
+            Number(admin.active || 0) +
+            "/" +
+            (Number(admin.limit || 0) || "unbegrenzt") +
+            ", Lehrer " +
+            Number(teacher.active || 0) +
+            "/" +
+            (Number(teacher.limit || 0) || "unbegrenzt") +
+            ".";
+        } else if (limit > 0) {
+          status.textContent =
+            "Code-Lizenzen deiner Rolle: " +
+            active +
+            " von " +
+            limit +
+            " belegt. Gelöschte Codes geben eine Lizenz wieder frei.";
+        } else {
+          status.textContent = "Code-Lizenzen deiner Rolle: unbegrenzt.";
+        }
+        if (form && data.can_edit) {
+          form.classList.remove("hidden");
+          document.getElementById("code-limit-admin").value = String(Number(data.admin_limit || 0));
+          document.getElementById("code-limit-teacher").value = String(Number(data.teacher_limit || 0));
+        } else if (form) {
+          form.classList.add("hidden");
+        }
+      }
+
+      function loadInviteCodeLimits() {
+        fetch("/api/admin/invite-code-limits", { credentials: "same-origin" })
+          .then(function (r) {
+            if (r.status === 401 || r.status === 403) return null;
+            return r.json();
+          })
+          .then(renderInviteCodeLimits);
       }
 
       document.getElementById("btn-new-code").addEventListener("click", function () {
@@ -556,7 +622,16 @@
           })
           .then(function (x) {
             if (!x.ok || !x.d.code) {
-              out.textContent = "Code konnte nicht erzeugt werden.";
+              if (x.d && x.d.error === "code_limit") {
+                out.textContent =
+                  "Keine freie Code-Lizenz: " +
+                  x.d.active +
+                  " von " +
+                  x.d.limit +
+                  " sind belegt. Lösche einen ungenutzten Code, dann wird die Lizenz wieder frei.";
+              } else {
+                out.textContent = "Code konnte nicht erzeugt werden.";
+              }
               return;
             }
             out.textContent =
@@ -569,6 +644,34 @@
               " · " +
               (x.d.role || "user");
             loadCodes();
+            loadInviteCodeLimits();
+          });
+      });
+
+      document.getElementById("code-limit-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var adminLimit = Number(document.getElementById("code-limit-admin").value || 0);
+        var teacherLimit = Number(document.getElementById("code-limit-teacher").value || 0);
+        fetch("/api/admin/invite-code-limits", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            admin_limit: Math.max(0, Math.floor(adminLimit)),
+            teacher_limit: Math.max(0, Math.floor(teacherLimit)),
+          }),
+        })
+          .then(function (r) {
+            return r.json().then(function (d) {
+              return { ok: r.ok, d: d };
+            });
+          })
+          .then(function (x) {
+            if (!x.ok) {
+              window.alert("Code-Lizenzen konnten nicht gespeichert werden.");
+              return;
+            }
+            loadInviteCodeLimits();
           });
       });
 
@@ -1187,6 +1290,7 @@
 
       resetShopForm();
       loadCodes();
+      loadInviteCodeLimits();
     })();
   </script>
 </body>

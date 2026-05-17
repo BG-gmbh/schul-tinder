@@ -11,7 +11,9 @@ const apiBaseUrl = String.fromEnvironment(
   defaultValue: 'http://127.0.0.1:5000',
 );
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await appLanguage.load();
   runApp(const LernApp());
 }
 
@@ -20,22 +22,28 @@ class LernApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'lerngruppen finder',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff3d9cf5),
-          brightness: Brightness.dark,
-          surface: const Color(0xff1a222d),
+    return ValueListenableBuilder<String>(
+      valueListenable: appLanguage,
+      builder: (context, languageCode, _) => LanguageScope(
+        code: languageCode,
+        child: MaterialApp(
+          title: 'lerngruppen finder',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xff3d9cf5),
+              brightness: Brightness.dark,
+              surface: const Color(0xff1a222d),
+            ),
+            scaffoldBackgroundColor: const Color(0xff0f1419),
+            inputDecorationTheme: const InputDecorationTheme(
+              border: OutlineInputBorder(),
+            ),
+            useMaterial3: true,
+          ),
+          home: const AppShell(),
         ),
-        scaffoldBackgroundColor: const Color(0xff0f1419),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-        ),
-        useMaterial3: true,
       ),
-      home: const AppShell(),
     );
   }
 }
@@ -235,6 +243,520 @@ IconData? iconForRole(String? role) {
   };
 }
 
+const appLanguages = [
+  AppLanguage('el', 'Griechisch', 'Ελληνικά'),
+  AppLanguage('sq', 'Albanisch', 'Shqip'),
+  AppLanguage('hu', 'Ungarisch', 'Magyar'),
+  AppLanguage('fi', 'Finnisch', 'Suomi'),
+  AppLanguage('et', 'Estnisch', 'Eesti'),
+  AppLanguage('tr', 'Türkisch', 'Türkçe'),
+  AppLanguage('eu', 'Baskisch', 'Euskara'),
+  AppLanguage('mt', 'Maltesisch', 'Malti'),
+  AppLanguage('ga', 'Irisch', 'Gaeilge'),
+  AppLanguage('cy', 'Walisisch', 'Cymraeg'),
+  AppLanguage('pl', 'Polnisch', 'Polski'),
+  AppLanguage('cs', 'Tschechisch', 'Čeština'),
+  AppLanguage('sk', 'Slowakisch', 'Slovenčina'),
+  AppLanguage('uk', 'Ukrainisch', 'Українська'),
+  AppLanguage('ru', 'Russisch', 'Русский'),
+  AppLanguage('hr', 'Kroatisch', 'Hrvatski'),
+  AppLanguage('sr', 'Serbisch', 'Српски'),
+  AppLanguage('bg', 'Bulgarisch', 'Български'),
+  AppLanguage('sl', 'Slowenisch', 'Slovenščina'),
+  AppLanguage('fr', 'Französisch', 'Français'),
+  AppLanguage('es', 'Spanisch', 'Español'),
+  AppLanguage('pt', 'Portugiesisch', 'Português'),
+  AppLanguage('it', 'Italienisch', 'Italiano'),
+  AppLanguage('ro', 'Rumänisch', 'Română'),
+  AppLanguage('de', 'Deutsch', 'Deutsch'),
+  AppLanguage('en', 'Englisch', 'English'),
+  AppLanguage('nl', 'Niederländisch', 'Nederlands'),
+  AppLanguage('sv', 'Schwedisch', 'Svenska'),
+  AppLanguage('no', 'Norwegisch', 'Norsk'),
+  AppLanguage('da', 'Dänisch', 'Dansk'),
+  AppLanguage('is', 'Isländisch', 'Íslenska'),
+];
+
+const _baseText = {
+  'language': 'Sprache',
+  'logout': 'Logout',
+  'home': 'Home',
+  'chat': 'Chat',
+  'shop': 'Laden',
+  'profile': 'Profil',
+  'admin': 'Admin',
+  'login': 'Login',
+  'invite_register': 'Mit Code registrieren',
+  'setup_admin': 'Admin festlegen',
+  'create_account': 'Konto erstellen',
+  'username': 'Benutzername',
+  'password': 'Passwort',
+  'confirm_password': 'Passwort bestätigen',
+  'invite_code': 'Einladungscode',
+  'setup_only': 'Nur möglich, wenn kein Admin-Konto existiert.',
+  'password_short': 'Passwort zu kurz.',
+  'api': 'API',
+  'hello': 'Hallo',
+  'class': 'Klasse',
+  'subject_chat': 'Fächer-Chat',
+  'create_chat': 'Chat erstellen',
+  'no_chat_open': 'Aktuell ist kein Fachchat offen.',
+  'continue': 'Fortsetzen',
+  'room_closed': 'Raum geschlossen',
+  'join': 'Beitreten',
+  'back': 'Zurück',
+  'report': 'Melden',
+  'write_message': 'Nachricht schreiben',
+  'send': 'Senden',
+  'points': 'Punkte',
+  'save': 'Speichern',
+  'refresh': 'Aktualisieren',
+  'users': 'Nutzer',
+  'codes': 'Codes',
+  'chats': 'Chats',
+  'ratings': 'Bewertungen',
+  'teachers': 'Lehrer',
+  'logo': 'Logo',
+  'schools': 'Schulen',
+  'licenses': 'Lizenzen',
+  'administration': 'Administration',
+  'german': 'Deutsch',
+  'math': 'Mathe',
+  'english': 'Englisch',
+  'biology': 'Biologie',
+  'pgw': 'PGW',
+  'spanish': 'Spanisch',
+  'art': 'Kunst',
+  'store_text': 'Punkte einsehen und aktive Angebote kaufen.',
+  'chat_text': 'Noob und Mittel können schreiben, sobald ein Pro im Fachraum ist.',
+  'admin_text': 'Nutzer, Einladungscodes, Chats, Bewertungen und Laden verwalten.',
+  'email': 'E-Mail-Adresse',
+  'notify_shop': 'Bei Laden-Käufen per E-Mail informieren',
+  'change_password': 'Passwort ändern',
+  'current_password': 'Aktuelles Passwort',
+  'new_password': 'Neues Passwort',
+  'confirm_new_password': 'Neues Passwort bestätigen',
+  'saved': 'Gespeichert',
+  'cancel': 'Abbrechen',
+  'ok': 'OK',
+  'create': 'Erstellen',
+  'delete': 'Löschen',
+  'edit': 'Bearbeiten',
+  'copy': 'Kopieren',
+  'active': 'Aktiv',
+  'inactive': 'inaktiv',
+  'set_password': 'Passwort setzen',
+  'password_saved': 'Passwort gespeichert',
+  'edit_role_school': 'Rolle und Schule bearbeiten',
+  'set_class': 'Klasse setzen',
+  'class_saved': 'Klasse gespeichert',
+  'verify_pros': 'Pros verifizieren',
+  'pro_verification_saved': 'Pro-Verifizierung gespeichert',
+  'unban': 'Entsperren',
+  'ban': 'Sperren',
+  'ban_user': 'Nutzer sperren',
+  'unban_user_q': 'Nutzer entsperren?',
+  'ban_reason': 'Grund',
+  'ban_reason_required': 'Bitte einen Sperrgrund eingeben.',
+  'user_saved': 'Nutzer gespeichert',
+  'user_banned': 'Nutzer gesperrt',
+  'user_unbanned': 'Nutzer entsperrt',
+  'no_users': 'Keine Nutzer gefunden.',
+  'create_code': 'Code erstellen',
+  'copy_code': 'Code kopieren',
+  'delete_code': 'Code löschen',
+  'code_copied': 'Code kopiert',
+  'code_created': 'Code erstellt',
+  'code_deleted': 'Code gelöscht',
+  'delete_invite_code_q': 'Einladungscode löschen?',
+  'delete_invite_code_msg': 'wird gelöscht und kann danach nicht mehr benutzt werden.',
+  'no_open_codes': 'Keine offenen Codes.',
+  'admin_code_licenses': 'Admin-Code-Lizenzen',
+  'teacher_code_licenses': 'Lehrer-Code-Lizenzen',
+  'unlimited_zero': '0 = unbegrenzt',
+  'positive_numbers': 'Bitte positive Zahlen oder 0 eingeben.',
+  'code_licenses_saved': 'Code-Lizenzen gespeichert',
+  'license_pool': 'Lizenz-Pool',
+  'occupied': 'belegt',
+  'role_licenses_unlimited': 'Code-Lizenzen deiner Rolle: unbegrenzt',
+  'role_licenses': 'Code-Lizenzen deiner Rolle',
+  'no_chat_data': 'Keine Chatdaten gefunden.',
+  'messages': 'Nachrichten',
+  'reports': 'Meldungen',
+  'delete_subject_chat': 'Fachchat löschen',
+  'chat_deleted': 'Chat gelöscht',
+  'delete_chat_msg': 'wird inklusive Nachrichten und Bewertungen gelöscht.',
+  'reported_messages': 'Gemeldete Nachrichten',
+  'no_open_reports': 'Keine offenen Meldungen.',
+  'resolve_report': 'Meldung erledigen',
+  'report_resolved': 'Meldung erledigt',
+  'no_ratings': 'Keine Bewertungen.',
+  'edit_admin_points': 'Admin-Punkte bearbeiten',
+  'admin_points': 'Admin-Punkte',
+  'admin_points_saved': 'Admin-Punkte gespeichert',
+  'note': 'Notiz',
+  'create_item': 'Artikel erstellen',
+  'edit_item': 'Artikel bearbeiten',
+  'item_created': 'Artikel erstellt',
+  'item_saved': 'Artikel gespeichert',
+  'delete_item_q': 'Artikel löschen?',
+  'item_deleted': 'Artikel gelöscht',
+  'bulk_listing': 'Massen Listung',
+  'no_items_entered': 'Keine Artikel eingegeben.',
+  'items_created': 'Artikel erstellt',
+  'no_shop_items': 'Keine Ladenartikel.',
+  'title': 'Titel',
+  'description': 'Beschreibung',
+  'price_hint': 'Preis-Hinweis',
+  'points_price': 'Punktepreis',
+  'class_all': 'Klasse (leer = alle Klassen)',
+  'sort_order': 'Sortierung',
+  'items': 'Artikel',
+  'one_item_per_line': 'Ein Artikel pro Zeile',
+  'create_contact': 'Kontakt erstellen',
+  'edit_contact': 'Kontakt bearbeiten',
+  'contact_created': 'Kontakt erstellt',
+  'contact_saved': 'Kontakt gespeichert',
+  'delete_contact_q': 'Kontakt löschen?',
+  'contact_deleted': 'Kontakt gelöscht',
+  'no_teacher_contacts': 'Keine Lehrer-Kontakte.',
+  'name': 'Name',
+  'school': 'Schule',
+  'no_school': 'Keine',
+  'no_school_set': 'Keine Schule gesetzt',
+  'all_schools': 'alle Schulen',
+  'add_school': 'Schule hinzufügen',
+  'school_name': 'Schulname',
+  'school_created': 'Schule angelegt',
+  'no_schools': 'Noch keine Schulen.',
+  'dev_only': 'Nur fuer Devs.',
+  'school_logo': 'Schul-Logo',
+  'image_url': 'Bild-URL',
+  'logo_saved': 'Logo gespeichert',
+  'set_logo_url': 'Logo-URL setzen',
+  'remove': 'Entfernen',
+  'no_logo': 'Noch kein Schul-Logo gesetzt.',
+  'role': 'Rolle',
+  'user_role': 'User',
+  'no_pro_level': 'Kein Pro-Level',
+  'reason_optional': 'Grund (optional)',
+  'report_message': 'Nachricht melden',
+  'message_reported': 'Nachricht wurde gemeldet.',
+  'location': 'Ort',
+  'set_location': 'Ort festlegen',
+  'appointment': 'Termin',
+  'no_appointment_set': 'Kein Termin gesetzt',
+  'appointment_ended_label': 'Termin beendet',
+  'appointment_running': 'Termin läuft · Raum geschlossen',
+  'set_appointment': 'Termin setzen',
+  'change_appointment': 'Termin ändern',
+  'start_appointment': 'Termin starten',
+  'end_appointment': 'Termin beenden',
+  'rate': 'Bewerten',
+  'change_rating': 'Bewertung ändern',
+  'rate_appointment': 'Termin bewerten',
+  'rating': 'Bewertung',
+  'comment': 'Kommentar',
+  'stars5': '5 Sterne',
+  'stars4': '4 Sterne',
+  'stars3': '3 Sterne',
+  'stars2': '2 Sterne',
+  'stars1': '1 Stern',
+  'need_comment_local': 'Bei weniger als 4 Sternen ist ein Kommentar nötig.',
+  'chat_ended_local': 'Der Termin ist beendet. Der Chat wurde geleert.',
+  'all_password_fields': 'Bitte alle Passwortfelder ausfüllen.',
+  'password_mismatch': 'Passwörter stimmen nicht überein.',
+  'error_prefix': 'Fehler',
+  'verified': 'verifiziert',
+  'open': 'offen',
+  'created': 'Erstellt',
+  'stars': 'Sterne',
+  'reported_by': 'Gemeldet von',
+  'minutes_short': 'Min.',
+  'hours_short': 'Std.',
+  'medium': 'Mittel',
+  'username_short': 'Benutzername zu kurz.',
+  'current_password_wrong': 'Aktuelles Passwort stimmt nicht.',
+  'ban_reason_too_long': 'Sperrgrund ist zu lang.',
+  'username_taken': 'Benutzername ist schon vergeben.',
+  'login_invalid': 'Login-Daten stimmen nicht.',
+  'bad_invite': 'Einladungscode ist ungültig.',
+  'bad_contact_email': 'E-Mail-Adresse ist ungültig.',
+  'notify_no_email': 'Bitte erst eine E-Mail-Adresse eintragen.',
+  'invalid_school': 'Schulname ist zu lang.',
+  'invalid_logo_url': 'Logo-URL ist ungültig.',
+  'invalid_role': 'Rolle ist ungültig.',
+  'invalid_limit': 'Code-Lizenzlimit ist ungültig.',
+  'code_limit': 'Keine freie Code-Lizenz. Lösche einen ungenutzten Code.',
+  'invalid_datetime': 'Bitte ein gültiges Datum wählen.',
+  'empty_location': 'Bitte einen Ort eingeben.',
+  'invalid_location': 'Der Ort ist zu lang.',
+  'permission': 'Nur Pros können diesen Termin ändern.',
+  'no_appointment_error': 'Es gibt keinen Termin.',
+  'not_started': 'Der Termin wurde noch nicht gestartet.',
+  'already_ended': 'Der Termin ist schon beendet.',
+  'room_closed_error': 'Der Termin läuft schon. Der Raum ist geschlossen.',
+  'already_reported': 'Du hast diese Nachricht schon gemeldet.',
+  'message_not_found': 'Diese Nachricht gibt es nicht mehr.',
+  'own_message': 'Eigene Nachrichten kannst du nicht melden.',
+  'reason_too_long': 'Der Meldegrund ist zu lang.',
+  'report_not_found': 'Diese Meldung gibt es nicht mehr.',
+  'not_ended': 'Der Termin wurde noch nicht beendet.',
+  'not_in_room': 'Du bist nicht mehr im Raum.',
+  'setup_done': 'Es gibt schon ein Admin-Konto.',
+  'auth': 'Bitte neu einloggen.',
+  'forbidden': 'Dafür hast du keine Berechtigung.',
+};
+
+const _localizedText = {
+  'en': {
+    'language': 'Language',
+    'logout': 'Log out',
+    'shop': 'Store',
+    'profile': 'Profile',
+    'invite_register': 'Register with code',
+    'setup_admin': 'Set admin',
+    'create_account': 'Create account',
+    'username': 'Username',
+    'password': 'Password',
+    'confirm_password': 'Confirm password',
+    'invite_code': 'Invite code',
+    'setup_only': 'Only possible if no admin account exists.',
+    'password_short': 'Password too short.',
+    'hello': 'Hello',
+    'class': 'Class',
+    'subject_chat': 'Subject chat',
+    'create_chat': 'Create chat',
+    'no_chat_open': 'No subject chat is open right now.',
+    'continue': 'Continue',
+    'room_closed': 'Room closed',
+    'join': 'Join',
+    'back': 'Back',
+    'report': 'Report',
+    'write_message': 'Write a message',
+    'send': 'Send',
+    'points': 'Points',
+    'save': 'Save',
+    'refresh': 'Refresh',
+    'users': 'Users',
+    'ratings': 'Ratings',
+    'teachers': 'Teachers',
+    'schools': 'Schools',
+    'licenses': 'Licenses',
+    'administration': 'Administration',
+    'german': 'German',
+    'math': 'Math',
+    'english': 'English',
+    'biology': 'Biology',
+    'spanish': 'Spanish',
+    'art': 'Art',
+    'store_text': 'View points and buy active offers.',
+    'chat_text': 'Noob and medium users can write once a pro is in the room.',
+    'admin_text': 'Manage users, invite codes, chats, ratings, and store.',
+    'email': 'Email address',
+    'notify_shop': 'Notify me by email for store purchases',
+    'change_password': 'Change password',
+    'current_password': 'Current password',
+    'new_password': 'New password',
+    'confirm_new_password': 'Confirm new password',
+    'saved': 'Saved',
+  },
+  'fr': {
+    'language': 'Langue',
+    'logout': 'Déconnexion',
+    'home': 'Accueil',
+    'shop': 'Boutique',
+    'profile': 'Profil',
+    'login': 'Connexion',
+    'invite_register': 'Inscription avec code',
+    'setup_admin': 'Définir admin',
+    'create_account': 'Créer un compte',
+    'username': 'Nom d’utilisateur',
+    'password': 'Mot de passe',
+    'confirm_password': 'Confirmer le mot de passe',
+    'invite_code': 'Code d’invitation',
+    'hello': 'Bonjour',
+    'class': 'Classe',
+    'subject_chat': 'Chat par matière',
+    'create_chat': 'Créer un chat',
+    'join': 'Rejoindre',
+    'back': 'Retour',
+    'report': 'Signaler',
+    'write_message': 'Écrire un message',
+    'send': 'Envoyer',
+    'points': 'Points',
+    'save': 'Enregistrer',
+    'refresh': 'Actualiser',
+    'users': 'Utilisateurs',
+    'ratings': 'Évaluations',
+    'teachers': 'Enseignants',
+    'schools': 'Écoles',
+    'licenses': 'Licences',
+    'administration': 'Administration',
+    'german': 'Allemand',
+    'math': 'Maths',
+    'english': 'Anglais',
+    'biology': 'Biologie',
+    'spanish': 'Espagnol',
+    'art': 'Arts',
+    'email': 'Adresse e-mail',
+    'change_password': 'Changer le mot de passe',
+    'saved': 'Enregistré',
+  },
+  'es': {
+    'language': 'Idioma',
+    'logout': 'Cerrar sesión',
+    'home': 'Inicio',
+    'shop': 'Tienda',
+    'profile': 'Perfil',
+    'login': 'Iniciar sesión',
+    'invite_register': 'Registrarse con código',
+    'setup_admin': 'Configurar admin',
+    'create_account': 'Crear cuenta',
+    'username': 'Usuario',
+    'password': 'Contraseña',
+    'confirm_password': 'Confirmar contraseña',
+    'invite_code': 'Código de invitación',
+    'hello': 'Hola',
+    'class': 'Clase',
+    'subject_chat': 'Chat de asignaturas',
+    'create_chat': 'Crear chat',
+    'join': 'Unirse',
+    'back': 'Atrás',
+    'report': 'Reportar',
+    'write_message': 'Escribir mensaje',
+    'send': 'Enviar',
+    'points': 'Puntos',
+    'save': 'Guardar',
+    'refresh': 'Actualizar',
+    'users': 'Usuarios',
+    'ratings': 'Valoraciones',
+    'teachers': 'Profesores',
+    'schools': 'Escuelas',
+    'licenses': 'Licencias',
+    'administration': 'Administración',
+    'german': 'Alemán',
+    'math': 'Matemáticas',
+    'english': 'Inglés',
+    'biology': 'Biología',
+    'spanish': 'Español',
+    'art': 'Arte',
+    'email': 'Correo electrónico',
+    'change_password': 'Cambiar contraseña',
+    'saved': 'Guardado',
+  },
+  'el': {'language': 'Γλώσσα', 'logout': 'Αποσύνδεση', 'home': 'Αρχική', 'shop': 'Κατάστημα', 'profile': 'Προφίλ', 'login': 'Σύνδεση', 'invite_register': 'Εγγραφή με κωδικό', 'setup_admin': 'Ορισμός διαχειριστή', 'create_account': 'Δημιουργία λογαριασμού', 'username': 'Όνομα χρήστη', 'password': 'Κωδικός', 'confirm_password': 'Επιβεβαίωση κωδικού', 'hello': 'Γεια', 'save': 'Αποθήκευση'},
+  'sq': {'language': 'Gjuha', 'logout': 'Dil', 'home': 'Kryefaqja', 'shop': 'Dyqani', 'profile': 'Profili', 'login': 'Hyrje', 'invite_register': 'Regjistrohu me kod', 'setup_admin': 'Cakto admin', 'create_account': 'Krijo llogari', 'username': 'Përdoruesi', 'password': 'Fjalëkalimi', 'confirm_password': 'Konfirmo fjalëkalimin', 'hello': 'Përshëndetje', 'save': 'Ruaj'},
+  'hu': {'language': 'Nyelv', 'logout': 'Kijelentkezés', 'home': 'Kezdőlap', 'shop': 'Bolt', 'profile': 'Profil', 'login': 'Bejelentkezés', 'invite_register': 'Regisztráció kóddal', 'setup_admin': 'Admin beállítása', 'create_account': 'Fiók létrehozása', 'username': 'Felhasználónév', 'password': 'Jelszó', 'confirm_password': 'Jelszó megerősítése', 'hello': 'Szia', 'save': 'Mentés'},
+  'fi': {'language': 'Kieli', 'logout': 'Kirjaudu ulos', 'home': 'Etusivu', 'shop': 'Kauppa', 'profile': 'Profiili', 'login': 'Kirjaudu', 'invite_register': 'Rekisteröidy koodilla', 'setup_admin': 'Aseta admin', 'create_account': 'Luo tili', 'username': 'Käyttäjänimi', 'password': 'Salasana', 'confirm_password': 'Vahvista salasana', 'hello': 'Hei', 'save': 'Tallenna'},
+  'et': {'language': 'Keel', 'logout': 'Logi välja', 'home': 'Avaleht', 'shop': 'Pood', 'profile': 'Profiil', 'login': 'Logi sisse', 'invite_register': 'Registreeru koodiga', 'setup_admin': 'Määra admin', 'create_account': 'Loo konto', 'username': 'Kasutajanimi', 'password': 'Parool', 'confirm_password': 'Kinnita parool', 'hello': 'Tere', 'save': 'Salvesta'},
+  'tr': {'language': 'Dil', 'logout': 'Çıkış', 'home': 'Ana sayfa', 'shop': 'Mağaza', 'profile': 'Profil', 'login': 'Giriş', 'invite_register': 'Kodla kayıt ol', 'setup_admin': 'Admin ayarla', 'create_account': 'Hesap oluştur', 'username': 'Kullanıcı adı', 'password': 'Şifre', 'confirm_password': 'Şifreyi onayla', 'hello': 'Merhaba', 'save': 'Kaydet'},
+  'eu': {'language': 'Hizkuntza', 'logout': 'Irten', 'home': 'Hasiera', 'shop': 'Denda', 'profile': 'Profila', 'login': 'Saioa hasi', 'invite_register': 'Erregistratu kodearekin', 'setup_admin': 'Ezarri admina', 'create_account': 'Sortu kontua', 'username': 'Erabiltzailea', 'password': 'Pasahitza', 'confirm_password': 'Berretsi pasahitza', 'hello': 'Kaixo', 'save': 'Gorde'},
+  'mt': {'language': 'Lingwa', 'logout': 'Oħroġ', 'home': 'Dar', 'shop': 'Ħanut', 'profile': 'Profil', 'login': 'Idħol', 'invite_register': 'Irreġistra b’kodiċi', 'setup_admin': 'Issettja admin', 'create_account': 'Oħloq kont', 'username': 'Username', 'password': 'Password', 'confirm_password': 'Ikkonferma password', 'hello': 'Bongu', 'save': 'Issejvja'},
+  'ga': {'language': 'Teanga', 'logout': 'Logáil amach', 'home': 'Baile', 'shop': 'Siopa', 'profile': 'Próifíl', 'login': 'Logáil isteach', 'invite_register': 'Cláraigh le cód', 'setup_admin': 'Socraigh riarthóir', 'create_account': 'Cruthaigh cuntas', 'username': 'Ainm úsáideora', 'password': 'Pasfhocal', 'confirm_password': 'Deimhnigh pasfhocal', 'hello': 'Dia dhuit', 'save': 'Sábháil'},
+  'cy': {'language': 'Iaith', 'logout': 'Allgofnodi', 'home': 'Hafan', 'shop': 'Siop', 'profile': 'Proffil', 'login': 'Mewngofnodi', 'invite_register': 'Cofrestru gyda chod', 'setup_admin': 'Gosod admin', 'create_account': 'Creu cyfrif', 'username': 'Enw defnyddiwr', 'password': 'Cyfrinair', 'confirm_password': 'Cadarnhau cyfrinair', 'hello': 'Helo', 'save': 'Cadw'},
+  'pl': {'language': 'Język', 'logout': 'Wyloguj', 'home': 'Start', 'shop': 'Sklep', 'profile': 'Profil', 'login': 'Logowanie', 'invite_register': 'Rejestracja kodem', 'setup_admin': 'Ustaw admina', 'create_account': 'Utwórz konto', 'username': 'Nazwa użytkownika', 'password': 'Hasło', 'confirm_password': 'Potwierdź hasło', 'hello': 'Cześć', 'save': 'Zapisz'},
+  'cs': {'language': 'Jazyk', 'logout': 'Odhlásit', 'home': 'Domů', 'shop': 'Obchod', 'profile': 'Profil', 'login': 'Přihlášení', 'invite_register': 'Registrovat kódem', 'setup_admin': 'Nastavit admina', 'create_account': 'Vytvořit účet', 'username': 'Uživatel', 'password': 'Heslo', 'confirm_password': 'Potvrdit heslo', 'hello': 'Ahoj', 'save': 'Uložit'},
+  'sk': {'language': 'Jazyk', 'logout': 'Odhlásiť', 'home': 'Domov', 'shop': 'Obchod', 'profile': 'Profil', 'login': 'Prihlásenie', 'invite_register': 'Registrovať kódom', 'setup_admin': 'Nastaviť admina', 'create_account': 'Vytvoriť účet', 'username': 'Používateľ', 'password': 'Heslo', 'confirm_password': 'Potvrdiť heslo', 'hello': 'Ahoj', 'save': 'Uložiť'},
+  'uk': {'language': 'Мова', 'logout': 'Вийти', 'home': 'Головна', 'shop': 'Крамниця', 'profile': 'Профіль', 'login': 'Вхід', 'invite_register': 'Реєстрація з кодом', 'setup_admin': 'Налаштувати адміна', 'create_account': 'Створити акаунт', 'username': 'Користувач', 'password': 'Пароль', 'confirm_password': 'Підтвердити пароль', 'hello': 'Привіт', 'save': 'Зберегти'},
+  'ru': {'language': 'Язык', 'logout': 'Выйти', 'home': 'Главная', 'shop': 'Магазин', 'profile': 'Профиль', 'login': 'Вход', 'invite_register': 'Регистрация по коду', 'setup_admin': 'Назначить админа', 'create_account': 'Создать аккаунт', 'username': 'Пользователь', 'password': 'Пароль', 'confirm_password': 'Подтвердить пароль', 'hello': 'Привет', 'save': 'Сохранить'},
+  'hr': {'language': 'Jezik', 'logout': 'Odjava', 'home': 'Početna', 'shop': 'Trgovina', 'profile': 'Profil', 'login': 'Prijava', 'invite_register': 'Registracija kodom', 'setup_admin': 'Postavi admina', 'create_account': 'Stvori račun', 'username': 'Korisnik', 'password': 'Lozinka', 'confirm_password': 'Potvrdi lozinku', 'hello': 'Bok', 'save': 'Spremi'},
+  'sr': {'language': 'Језик', 'logout': 'Одјава', 'home': 'Почетна', 'shop': 'Продавница', 'profile': 'Профил', 'login': 'Пријава', 'invite_register': 'Регистрација кодом', 'setup_admin': 'Постави админа', 'create_account': 'Направи налог', 'username': 'Корисник', 'password': 'Лозинка', 'confirm_password': 'Потврди лозинку', 'hello': 'Здраво', 'save': 'Сачувај'},
+  'bg': {'language': 'Език', 'logout': 'Изход', 'home': 'Начало', 'shop': 'Магазин', 'profile': 'Профил', 'login': 'Вход', 'invite_register': 'Регистрация с код', 'setup_admin': 'Задай админ', 'create_account': 'Създай акаунт', 'username': 'Потребител', 'password': 'Парола', 'confirm_password': 'Потвърди парола', 'hello': 'Здравей', 'save': 'Запази'},
+  'sl': {'language': 'Jezik', 'logout': 'Odjava', 'home': 'Domov', 'shop': 'Trgovina', 'profile': 'Profil', 'login': 'Prijava', 'invite_register': 'Registracija s kodo', 'setup_admin': 'Nastavi admina', 'create_account': 'Ustvari račun', 'username': 'Uporabnik', 'password': 'Geslo', 'confirm_password': 'Potrdi geslo', 'hello': 'Živjo', 'save': 'Shrani'},
+  'pt': {'language': 'Idioma', 'logout': 'Sair', 'home': 'Início', 'shop': 'Loja', 'profile': 'Perfil', 'login': 'Entrar', 'invite_register': 'Registrar com código', 'setup_admin': 'Definir admin', 'create_account': 'Criar conta', 'username': 'Usuário', 'password': 'Senha', 'confirm_password': 'Confirmar senha', 'hello': 'Olá', 'save': 'Salvar'},
+  'it': {'language': 'Lingua', 'logout': 'Esci', 'home': 'Home', 'shop': 'Negozio', 'profile': 'Profilo', 'login': 'Accesso', 'invite_register': 'Registrati con codice', 'setup_admin': 'Imposta admin', 'create_account': 'Crea account', 'username': 'Utente', 'password': 'Password', 'confirm_password': 'Conferma password', 'hello': 'Ciao', 'save': 'Salva'},
+  'ro': {'language': 'Limbă', 'logout': 'Deconectare', 'home': 'Acasă', 'shop': 'Magazin', 'profile': 'Profil', 'login': 'Autentificare', 'invite_register': 'Înregistrare cu cod', 'setup_admin': 'Setează admin', 'create_account': 'Creează cont', 'username': 'Utilizator', 'password': 'Parolă', 'confirm_password': 'Confirmă parola', 'hello': 'Salut', 'save': 'Salvează'},
+  'nl': {'language': 'Taal', 'logout': 'Uitloggen', 'home': 'Home', 'shop': 'Winkel', 'profile': 'Profiel', 'login': 'Inloggen', 'invite_register': 'Registreren met code', 'setup_admin': 'Admin instellen', 'create_account': 'Account maken', 'username': 'Gebruiker', 'password': 'Wachtwoord', 'confirm_password': 'Wachtwoord bevestigen', 'hello': 'Hallo', 'save': 'Opslaan'},
+  'sv': {'language': 'Språk', 'logout': 'Logga ut', 'home': 'Hem', 'shop': 'Butik', 'profile': 'Profil', 'login': 'Logga in', 'invite_register': 'Registrera med kod', 'setup_admin': 'Ange admin', 'create_account': 'Skapa konto', 'username': 'Användare', 'password': 'Lösenord', 'confirm_password': 'Bekräfta lösenord', 'hello': 'Hej', 'save': 'Spara'},
+  'no': {'language': 'Språk', 'logout': 'Logg ut', 'home': 'Hjem', 'shop': 'Butikk', 'profile': 'Profil', 'login': 'Logg inn', 'invite_register': 'Registrer med kode', 'setup_admin': 'Sett admin', 'create_account': 'Opprett konto', 'username': 'Bruker', 'password': 'Passord', 'confirm_password': 'Bekreft passord', 'hello': 'Hei', 'save': 'Lagre'},
+  'da': {'language': 'Sprog', 'logout': 'Log ud', 'home': 'Hjem', 'shop': 'Butik', 'profile': 'Profil', 'login': 'Log ind', 'invite_register': 'Registrer med kode', 'setup_admin': 'Angiv admin', 'create_account': 'Opret konto', 'username': 'Bruger', 'password': 'Adgangskode', 'confirm_password': 'Bekræft adgangskode', 'hello': 'Hej', 'save': 'Gem'},
+  'is': {'language': 'Tungumál', 'logout': 'Skrá út', 'home': 'Heim', 'shop': 'Verslun', 'profile': 'Prófíll', 'login': 'Innskráning', 'invite_register': 'Skrá með kóða', 'setup_admin': 'Setja stjórnanda', 'create_account': 'Stofna aðgang', 'username': 'Notandi', 'password': 'Lykilorð', 'confirm_password': 'Staðfesta lykilorð', 'hello': 'Halló', 'save': 'Vista'},
+  'de': _baseText,
+};
+
+class AppLanguage {
+  const AppLanguage(this.code, this.germanName, this.nativeName);
+
+  final String code;
+  final String germanName;
+  final String nativeName;
+}
+
+class AppLanguageController extends ValueNotifier<String> {
+  AppLanguageController() : super('de');
+
+  Future<void> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('app_language');
+    if (saved != null && appLanguages.any((lang) => lang.code == saved)) {
+      value = saved;
+    }
+  }
+
+  Future<void> setLanguage(String code) async {
+    if (value == code) return;
+    value = code;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('app_language', code);
+  }
+}
+
+final appLanguage = AppLanguageController();
+
+class LanguageScope extends InheritedWidget {
+  const LanguageScope({required this.code, required super.child, super.key});
+
+  final String code;
+
+  static LanguageScope of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<LanguageScope>()!;
+  }
+
+  String t(String key) {
+    return _localizedText[code]?[key] ??
+        (code == 'de' ? null : _localizedText['en']?[key]) ??
+        _baseText[key] ??
+        key;
+  }
+
+  @override
+  bool updateShouldNotify(LanguageScope oldWidget) => oldWidget.code != code;
+}
+
+String tx(BuildContext context, String key) => LanguageScope.of(context).t(key);
+
+class LanguageMenuButton extends StatelessWidget {
+  const LanguageMenuButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final current = LanguageScope.of(context).code;
+    return PopupMenuButton<String>(
+      tooltip: tx(context, 'language'),
+      icon: const Icon(Icons.language),
+      initialValue: current,
+      onSelected: appLanguage.setLanguage,
+      itemBuilder: (context) => [
+        for (final language in appLanguages)
+          PopupMenuItem(
+            value: language.code,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 34,
+                  child: Text(language.code.toUpperCase()),
+                ),
+                Expanded(child: Text(language.nativeName)),
+                if (language.code == current) const Icon(Icons.check, size: 18),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -387,6 +909,7 @@ class _AppShellState extends State<AppShell> {
         toolbarHeight: 72,
         title: const Text('lerngruppen finder'),
         actions: [
+          const LanguageMenuButton(),
           if (user!.schoolLogoUrl.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
@@ -403,7 +926,7 @@ class _AppShellState extends State<AppShell> {
               ),
             ),
           IconButton(
-            tooltip: 'Logout',
+            tooltip: tx(context, 'logout'),
             onPressed: _logout,
             icon: const Icon(Icons.logout),
           ),
@@ -414,31 +937,31 @@ class _AppShellState extends State<AppShell> {
         selectedIndex: selectedTab,
         onDestinationSelected: (value) => setState(() => tab = value),
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Home',
+          NavigationDestination(
+            icon: const Icon(Icons.dashboard_outlined),
+            selectedIcon: const Icon(Icons.dashboard),
+            label: tx(context, 'home'),
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Chat',
+          NavigationDestination(
+            icon: const Icon(Icons.chat_bubble_outline),
+            selectedIcon: const Icon(Icons.chat_bubble),
+            label: tx(context, 'chat'),
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront),
-            label: 'Laden',
+          NavigationDestination(
+            icon: const Icon(Icons.storefront_outlined),
+            selectedIcon: const Icon(Icons.storefront),
+            label: tx(context, 'shop'),
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Profil',
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: tx(context, 'profile'),
           ),
           if (isAdmin)
-            const NavigationDestination(
-              icon: Icon(Icons.admin_panel_settings_outlined),
-              selectedIcon: Icon(Icons.admin_panel_settings),
-              label: 'Admin',
+            NavigationDestination(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              selectedIcon: const Icon(Icons.admin_panel_settings),
+              label: tx(context, 'admin'),
             ),
         ],
       ),
@@ -496,14 +1019,14 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final title = switch (mode) {
-      AuthMode.login => 'Einloggen',
-      AuthMode.invite => 'Mit Code registrieren',
-      AuthMode.setup => 'Admin festlegen',
+      AuthMode.login => tx(context, 'login'),
+      AuthMode.invite => tx(context, 'invite_register'),
+      AuthMode.setup => tx(context, 'setup_admin'),
     };
     final action = switch (mode) {
-      AuthMode.login => 'Login',
-      AuthMode.invite => 'Konto erstellen',
-      AuthMode.setup => 'Admin festlegen',
+      AuthMode.login => tx(context, 'login'),
+      AuthMode.invite => tx(context, 'create_account'),
+      AuthMode.setup => tx(context, 'setup_admin'),
     };
     final icon = switch (mode) {
       AuthMode.login => Icons.login,
@@ -512,7 +1035,10 @@ class _LoginScreenState extends State<LoginScreen> {
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('lerngruppen finder')),
+      appBar: AppBar(
+        title: const Text('lerngruppen finder'),
+        actions: const [LanguageMenuButton()],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
@@ -523,21 +1049,21 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(title, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 20),
               SegmentedButton<AuthMode>(
-                segments: const [
+                segments: [
                   ButtonSegment(
                     value: AuthMode.login,
-                    icon: Icon(Icons.login),
-                    label: Text('Login'),
+                    icon: const Icon(Icons.login),
+                    label: Text(tx(context, 'login')),
                   ),
                   ButtonSegment(
                     value: AuthMode.invite,
-                    icon: Icon(Icons.card_giftcard),
-                    label: Text('Code'),
+                    icon: const Icon(Icons.card_giftcard),
+                    label: Text(tx(context, 'codes')),
                   ),
                   ButtonSegment(
                     value: AuthMode.setup,
-                    icon: Icon(Icons.admin_panel_settings),
-                    label: Text('Admin'),
+                    icon: const Icon(Icons.admin_panel_settings),
+                    label: Text(tx(context, 'admin')),
                   ),
                 ],
                 selected: {mode},
@@ -551,7 +1077,7 @@ class _LoginScreenState extends State<LoginScreen> {
               if (mode == AuthMode.setup) ...[
                 const SizedBox(height: 12),
                 Text(
-                  'Nur möglich, wenn kein Admin-Konto existiert.',
+                  tx(context, 'setup_only'),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -561,21 +1087,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: inviteCode,
                   textInputAction: TextInputAction.next,
                   decoration:
-                      const InputDecoration(labelText: 'Einladungscode'),
+                      InputDecoration(labelText: tx(context, 'invite_code')),
                 ),
               ],
               const SizedBox(height: 12),
               TextField(
                 controller: username,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Benutzername'),
+                decoration: InputDecoration(labelText: tx(context, 'username')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: password,
                 obscureText: true,
                 onSubmitted: (_) => _submit(),
-                decoration: const InputDecoration(labelText: 'Passwort'),
+                decoration: InputDecoration(labelText: tx(context, 'password')),
               ),
               if (mode != AuthMode.login) ...[
                 const SizedBox(height: 12),
@@ -583,8 +1109,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: passwordConfirm,
                   obscureText: true,
                   onSubmitted: (_) => _submit(),
-                  decoration: const InputDecoration(
-                    labelText: 'Passwort bestätigen',
+                  decoration: InputDecoration(
+                    labelText: tx(context, 'confirm_password'),
                   ),
                 ),
               ],
@@ -609,7 +1135,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
               const SizedBox(height: 16),
               Text(
-                'API: $apiBaseUrl',
+                '${tx(context, 'api')}: $apiBaseUrl',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -626,7 +1152,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final inviteCodeText = inviteCode.text.trim();
 
     if (passwordText.length < 6) {
-      setState(() => error = 'Passwort zu kurz.');
+      setState(() => error = tx(context, 'password_short'));
       return;
     }
 
@@ -652,7 +1178,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -681,7 +1207,7 @@ class DashboardScreen extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Hallo, ${user.username}',
+            Text('${tx(context, 'hello')}, ${user.username}',
                 style: Theme.of(context).textTheme.headlineSmall),
             if (user.isStaff) ...[
               const SizedBox(width: 8),
@@ -695,39 +1221,37 @@ class DashboardScreen extends StatelessWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            LevelChip(label: 'Deutsch', value: user.levelGerman),
-            LevelChip(label: 'Mathe', value: user.levelMath),
-            LevelChip(label: 'Englisch', value: user.levelEnglish),
-            LevelChip(label: 'Biologie', value: user.levelBiology),
-            LevelChip(label: 'PGW', value: user.levelPgw),
-            LevelChip(label: 'Spanisch', value: user.levelSpanish),
-            LevelChip(label: 'Kunst', value: user.levelArt),
+            LevelChip(label: tx(context, 'german'), value: user.levelGerman),
+            LevelChip(label: tx(context, 'math'), value: user.levelMath),
+            LevelChip(label: tx(context, 'english'), value: user.levelEnglish),
+            LevelChip(label: tx(context, 'biology'), value: user.levelBiology),
+            LevelChip(label: tx(context, 'pgw'), value: user.levelPgw),
+            LevelChip(label: tx(context, 'spanish'), value: user.levelSpanish),
+            LevelChip(label: tx(context, 'art'), value: user.levelArt),
             if (user.className.isNotEmpty)
-              Chip(label: Text('Klasse ${user.className}')),
+              Chip(label: Text('${tx(context, 'class')} ${user.className}')),
           ],
         ),
         const SizedBox(height: 20),
         InfoCard(
           icon: Icons.chat_bubble_outline,
-          title: 'Fachchat',
-          text:
-              'Noob und Mittel können schreiben, sobald ein Pro im Fachraum ist.',
+          title: tx(context, 'subject_chat'),
+          text: tx(context, 'chat_text'),
           onTap: onOpenChat,
         ),
         const SizedBox(height: 12),
         InfoCard(
           icon: Icons.storefront_outlined,
-          title: 'Laden',
-          text: 'Punkte einsehen und aktive Angebote kaufen.',
+          title: tx(context, 'shop'),
+          text: tx(context, 'store_text'),
           onTap: onOpenShop,
         ),
         if (onOpenAdmin != null) ...[
           const SizedBox(height: 12),
           InfoCard(
             icon: Icons.admin_panel_settings_outlined,
-            title: 'Administration',
-            text:
-                'Nutzer, Einladungscodes, Chats, Bewertungen und Laden verwalten.',
+            title: tx(context, 'administration'),
+            text: tx(context, 'admin_text'),
             onTap: onOpenAdmin!,
           ),
         ],
@@ -830,7 +1354,8 @@ class _ChatScreenState extends State<ChatScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Fächer-Chat', style: Theme.of(context).textTheme.headlineSmall),
+          Text(tx(context, 'subject_chat'),
+              style: Theme.of(context).textTheme.headlineSmall),
           if (error != null) ErrorBanner(error!),
           if (creatableRooms.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -839,13 +1364,13 @@ class _ChatScreenState extends State<ChatScreen> {
               child: FilledButton.icon(
                 onPressed: _createChatRoom,
                 icon: const Icon(Icons.add_comment_outlined),
-                label: const Text('Chat erstellen'),
+                label: Text(tx(context, 'create_chat')),
               ),
             ),
           ],
           const SizedBox(height: 12),
           if (rooms.isEmpty && creatableRooms.isEmpty)
-            const Text('Aktuell ist kein Fachchat offen.'),
+            Text(tx(context, 'no_chat_open')),
           for (final room in rooms) _roomCard(room as Map<String, dynamic>),
         ],
       ),
@@ -859,10 +1384,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final appointmentText = room['appointment']?.toString() ?? '';
     final locationText = room['location']?.toString() ?? '';
     final buttonLabel = room['you_in'] == true
-        ? 'Fortsetzen'
+        ? tx(context, 'continue')
         : joinBlock == 'started'
-            ? 'Raum geschlossen'
-            : 'Beitreten';
+            ? tx(context, 'room_closed')
+            : tx(context, 'join');
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -882,8 +1407,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(height: 6),
                 Text(
                   locationText.isEmpty
-                      ? 'Termin: $appointmentText'
-                      : 'Termin: $appointmentText · Ort: $locationText',
+                      ? '${tx(context, 'appointment')}: $appointmentText'
+                      : '${tx(context, 'appointment')}: $appointmentText · ${tx(context, 'location')}: $locationText',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -940,7 +1465,7 @@ class _ChatScreenState extends State<ChatScreen> {
           color: Theme.of(context).colorScheme.surface,
           child: ListTile(
             leading: IconButton(
-              tooltip: 'Zurück',
+              tooltip: tx(context, 'back'),
               onPressed: _leave,
               icon: const Icon(Icons.arrow_back),
             ),
@@ -1004,7 +1529,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             child: TextButton.icon(
                               onPressed: () => _reportMessage(msg),
                               icon: const Icon(Icons.flag_outlined, size: 18),
-                              label: const Text('Melden'),
+                              label: Text(tx(context, 'report')),
                             ),
                           ),
                       ],
@@ -1024,16 +1549,16 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     controller: input,
                     maxLength: 500,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       counterText: '',
-                      hintText: 'Nachricht schreiben',
+                      hintText: tx(context, 'write_message'),
                     ),
                     onSubmitted: (_) => _send(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  tooltip: 'Senden',
+                  tooltip: tx(context, 'send'),
                   onPressed: _send,
                   icon: const Icon(Icons.send),
                 ),
@@ -1071,10 +1596,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: Text(
                     appointmentText.isEmpty
-                        ? 'Kein Termin gesetzt'
+                        ? tx(context, 'no_appointment_set')
                         : locationText.isEmpty
-                            ? 'Termin: $appointmentText'
-                            : 'Termin: $appointmentText · Ort: $locationText',
+                            ? '${tx(context, 'appointment')}: $appointmentText'
+                            : '${tx(context, 'appointment')}: $appointmentText · ${tx(context, 'location')}: $locationText',
                   ),
                 ),
               ],
@@ -1082,20 +1607,20 @@ class _ChatScreenState extends State<ChatScreen> {
             if (ended) ...[
               const SizedBox(height: 6),
               Text(
-                'Termin beendet',
+                tx(context, 'appointment_ended_label'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ] else if (started) ...[
               const SizedBox(height: 6),
               Text(
-                'Termin läuft · Raum geschlossen',
+                tx(context, 'appointment_running'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
             if (isPro && data?['rating_count'] != null) ...[
               const SizedBox(height: 6),
               Text(
-                'Bewertungen: ${data?['rating_count']}$ratingAvgText',
+                '${tx(context, 'ratings')}: ${data?['rating_count']}$ratingAvgText',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -1110,28 +1635,28 @@ class _ChatScreenState extends State<ChatScreen> {
                     icon: const Icon(Icons.edit_calendar),
                     label: Text(
                       appointmentText.isEmpty
-                          ? 'Termin setzen'
-                          : 'Termin ändern',
+                          ? tx(context, 'set_appointment')
+                          : tx(context, 'change_appointment'),
                     ),
                   ),
                 if (isPro && appointmentText.isNotEmpty && !started && !ended)
                   FilledButton.icon(
                     onPressed: _startAppointment,
                     icon: const Icon(Icons.play_arrow),
-                    label: const Text('Termin starten'),
+                    label: Text(tx(context, 'start_appointment')),
                   ),
                 if (isPro && started && !ended)
                   FilledButton.icon(
                     onPressed: _endAppointment,
                     icon: const Icon(Icons.flag),
-                    label: const Text('Termin beenden'),
+                    label: Text(tx(context, 'end_appointment')),
                   ),
                 if (isPro && ended)
                   FilledButton.icon(
                     onPressed: () => _rateAppointment(yourRating),
                     icon: const Icon(Icons.star),
                     label: Text(
-                      yourRating == null ? 'Bewerten' : 'Bewertung ändern',
+                      yourRating == null ? tx(context, 'rate') : tx(context, 'change_rating'),
                     ),
                   ),
               ],
@@ -1168,7 +1693,7 @@ class _ChatScreenState extends State<ChatScreen> {
       await _loadMessages();
       await _loadAppointment();
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
@@ -1180,7 +1705,7 @@ class _ChatScreenState extends State<ChatScreen> {
       room = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: (context) => SimpleDialog(
-          title: const Text('Chat erstellen'),
+          title: Text(tx(context, 'create_chat')),
           children: [
             for (final raw in creatableRooms)
               Builder(
@@ -1239,7 +1764,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           messages = const [];
           since = 0;
-          if (!silent) error = friendlyError(ex);
+          if (!silent) error = friendlyError(context, ex);
         });
       } else if (!silent) {
         setState(() => error = ex.toString());
@@ -1253,7 +1778,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (active == null || body.isEmpty) return;
     if (appointment?['ended'] == true) {
       input.clear();
-      setState(() => error = 'Der Termin ist beendet. Der Chat wurde geleert.');
+      setState(() => error = tx(context, 'chat_ended_local'));
       return;
     }
     input.clear();
@@ -1264,16 +1789,16 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       await _loadMessages(silent: true);
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
   Future<void> _reportMessage(Map<String, dynamic> message) async {
     final reason = await showDialog<String>(
       context: context,
-      builder: (context) => const TextEntryDialog(
-        title: 'Nachricht melden',
-        label: 'Grund (optional)',
+      builder: (context) => TextEntryDialog(
+        title: tx(context, 'report_message'),
+        label: tx(context, 'reason_optional'),
         initialValue: '',
         obscure: false,
         maxLength: 300,
@@ -1285,9 +1810,9 @@ class _ChatScreenState extends State<ChatScreen> {
         'message_id': message['id'],
         'reason': reason.trim(),
       });
-      setState(() => error = 'Nachricht wurde gemeldet.');
+      setState(() => error = tx(context, 'message_reported'));
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
@@ -1342,7 +1867,7 @@ class _ChatScreenState extends State<ChatScreen> {
       await _loadAppointment();
       await _loadRooms(silent: true);
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
@@ -1351,12 +1876,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Ort festlegen'),
+        title: Text(tx(context, 'set_location')),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 120,
-          decoration: const InputDecoration(labelText: 'Ort'),
+          decoration: InputDecoration(labelText: tx(context, 'location')),
           textInputAction: TextInputAction.done,
           onSubmitted: (_) {
             final value = controller.text.trim();
@@ -1366,14 +1891,14 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
+            child: Text(tx(context, 'cancel')),
           ),
           FilledButton(
             onPressed: () {
               final value = controller.text.trim();
               if (value.isNotEmpty) Navigator.pop(context, value);
             },
-            child: const Text('Speichern'),
+            child: Text(tx(context, 'save')),
           ),
         ],
       ),
@@ -1395,7 +1920,7 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       await _loadAppointment();
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
@@ -1409,7 +1934,7 @@ class _ChatScreenState extends State<ChatScreen> {
       await _loadAppointment();
       await _loadRooms(silent: true);
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
@@ -1420,7 +1945,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (result == null) return;
     if (result.rating < 4 && result.comment.trim().isEmpty) {
       setState(
-          () => error = 'Bei weniger als 4 Sternen ist ein Kommentar nötig.');
+          () => error = tx(context, 'need_comment_local'));
       return;
     }
     try {
@@ -1431,7 +1956,7 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       await _loadAppointment();
     } catch (ex) {
-      setState(() => error = friendlyError(ex));
+      setState(() => error = friendlyError(context, ex));
     }
   }
 
@@ -1444,19 +1969,19 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Termin bewerten'),
+          title: Text(tx(context, 'rate_appointment')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<int>(
                 value: rating,
-                decoration: const InputDecoration(labelText: 'Bewertung'),
-                items: const [
-                  DropdownMenuItem(value: 5, child: Text('5 Sterne')),
-                  DropdownMenuItem(value: 4, child: Text('4 Sterne')),
-                  DropdownMenuItem(value: 3, child: Text('3 Sterne')),
-                  DropdownMenuItem(value: 2, child: Text('2 Sterne')),
-                  DropdownMenuItem(value: 1, child: Text('1 Stern')),
+                decoration: InputDecoration(labelText: tx(context, 'rating')),
+                items: [
+                  DropdownMenuItem(value: 5, child: Text(tx(context, 'stars5'))),
+                  DropdownMenuItem(value: 4, child: Text(tx(context, 'stars4'))),
+                  DropdownMenuItem(value: 3, child: Text(tx(context, 'stars3'))),
+                  DropdownMenuItem(value: 2, child: Text(tx(context, 'stars2'))),
+                  DropdownMenuItem(value: 1, child: Text(tx(context, 'stars1'))),
                 ],
                 onChanged: (value) {
                   if (value != null) setDialogState(() => rating = value);
@@ -1466,21 +1991,21 @@ class _ChatScreenState extends State<ChatScreen> {
               TextField(
                 controller: comment,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Kommentar'),
+                decoration: InputDecoration(labelText: tx(context, 'comment')),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(
                 context,
                 RatingEdit(rating, comment.text),
               ),
-              child: const Text('Speichern'),
+              child: Text(tx(context, 'save')),
             ),
           ],
         ),
@@ -1527,9 +2052,9 @@ class _ShopScreenState extends State<ShopScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Laden', style: Theme.of(context).textTheme.headlineSmall),
+          Text(tx(context, 'shop'), style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          Text('Punkte: $points'),
+          Text('${tx(context, 'points')}: $points'),
           if (error != null) ErrorBanner(error!),
           const SizedBox(height: 12),
           for (final item in items) _shopItem(item as Map<String, dynamic>),
@@ -1648,40 +2173,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text('Profil', style: Theme.of(context).textTheme.headlineSmall),
+        Text(tx(context, 'profile'), style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
         LevelSelector(
-          label: 'Deutsch',
+          label: tx(context, 'german'),
           value: german,
           onChanged: (v) => setState(() => german = v),
         ),
         LevelSelector(
-          label: 'Mathe',
+          label: tx(context, 'math'),
           value: math,
           onChanged: (v) => setState(() => math = v),
         ),
         LevelSelector(
-          label: 'Englisch',
+          label: tx(context, 'english'),
           value: english,
           onChanged: (v) => setState(() => english = v),
         ),
         LevelSelector(
-          label: 'Biologie',
+          label: tx(context, 'biology'),
           value: biology,
           onChanged: (v) => setState(() => biology = v),
         ),
         LevelSelector(
-          label: 'PGW',
+          label: tx(context, 'pgw'),
           value: pgw,
           onChanged: (v) => setState(() => pgw = v),
         ),
         LevelSelector(
-          label: 'Spanisch',
+          label: tx(context, 'spanish'),
           value: spanish,
           onChanged: (v) => setState(() => spanish = v),
         ),
         LevelSelector(
-          label: 'Kunst',
+          label: tx(context, 'art'),
           value: art,
           onChanged: (v) => setState(() => art = v),
         ),
@@ -1689,41 +2214,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
         TextField(
           controller: email,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(labelText: 'E-Mail-Adresse'),
+          decoration: InputDecoration(labelText: tx(context, 'email')),
         ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: notify,
           onChanged: (value) => setState(() => notify = value),
-          title: const Text('Bei Laden-Käufen per E-Mail informieren'),
+          title: Text(tx(context, 'notify_shop')),
         ),
         const SizedBox(height: 16),
-        Text('Passwort ändern', style: Theme.of(context).textTheme.titleMedium),
+        Text(tx(context, 'change_password'),
+            style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 12),
         TextField(
           controller: currentPassword,
           obscureText: true,
-          decoration: const InputDecoration(labelText: 'Aktuelles Passwort'),
+          decoration: InputDecoration(labelText: tx(context, 'current_password')),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: newPassword,
           obscureText: true,
-          decoration: const InputDecoration(labelText: 'Neues Passwort'),
+          decoration: InputDecoration(labelText: tx(context, 'new_password')),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: newPasswordConfirm,
           obscureText: true,
-          decoration: const InputDecoration(
-            labelText: 'Neues Passwort bestätigen',
+          decoration: InputDecoration(
+            labelText: tx(context, 'confirm_new_password'),
           ),
         ),
         const SizedBox(height: 8),
         FilledButton.icon(
           onPressed: busy ? null : _save,
           icon: const Icon(Icons.save),
-          label: const Text('Speichern'),
+          label: Text(tx(context, 'save')),
         ),
         if (status != null) ...[
           const SizedBox(height: 12),
@@ -1745,15 +2271,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (currentPasswordText.isEmpty ||
           newPasswordText.isEmpty ||
           newPasswordConfirmText.isEmpty) {
-        setState(() => status = 'Bitte alle Passwortfelder ausfüllen.');
+        setState(() => status = tx(context, 'all_password_fields'));
         return;
       }
       if (newPasswordText.length < 6) {
-        setState(() => status = 'Passwort zu kurz.');
+        setState(() => status = tx(context, 'password_short'));
         return;
       }
       if (newPasswordText != newPasswordConfirmText) {
-        setState(() => status = 'Passwörter stimmen nicht überein.');
+        setState(() => status = tx(context, 'password_mismatch'));
         return;
       }
     }
@@ -1785,9 +2311,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         newPassword.clear();
         newPasswordConfirm.clear();
       }
-      setState(() => status = 'Gespeichert');
+      setState(() => status = tx(context, 'saved'));
     } catch (ex) {
-      setState(() => status = friendlyError(ex));
+      setState(() => status = friendlyError(context, ex));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1839,6 +2365,7 @@ class _AdminScreenState extends State<AdminScreen> {
   List<dynamic> shopItems = const [];
   List<dynamic> teachers = const [];
   List<String> schools = const [];
+  Map<String, dynamic> inviteCodeLimits = const {};
   String schoolLogoUrl = '';
   String selectedLogoSchool = '';
 
@@ -1860,12 +2387,12 @@ class _AdminScreenState extends State<AdminScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'Administration',
+                  tx(context, 'administration'),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
               IconButton(
-                tooltip: 'Aktualisieren',
+                tooltip: tx(context, 'refresh'),
                 onPressed: loading ? null : _load,
                 icon: const Icon(Icons.refresh),
               ),
@@ -1876,46 +2403,46 @@ class _AdminScreenState extends State<AdminScreen> {
             scrollDirection: Axis.horizontal,
             child: SegmentedButton<AdminSection>(
               segments: [
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.users,
-                  icon: Icon(Icons.people),
-                  label: Text('Nutzer'),
+                  icon: const Icon(Icons.people),
+                  label: Text(tx(context, 'users')),
                 ),
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.codes,
-                  icon: Icon(Icons.vpn_key),
-                  label: Text('Codes'),
+                  icon: const Icon(Icons.vpn_key),
+                  label: Text(tx(context, 'codes')),
                 ),
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.chats,
-                  icon: Icon(Icons.forum),
-                  label: Text('Chats'),
+                  icon: const Icon(Icons.forum),
+                  label: Text(tx(context, 'chats')),
                 ),
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.ratings,
-                  icon: Icon(Icons.star),
-                  label: Text('Bewertungen'),
+                  icon: const Icon(Icons.star),
+                  label: Text(tx(context, 'ratings')),
                 ),
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.shop,
-                  icon: Icon(Icons.storefront),
-                  label: Text('Laden'),
+                  icon: const Icon(Icons.storefront),
+                  label: Text(tx(context, 'shop')),
                 ),
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.teachers,
-                  icon: Icon(Icons.alternate_email),
-                  label: Text('Lehrer'),
+                  icon: const Icon(Icons.alternate_email),
+                  label: Text(tx(context, 'teachers')),
                 ),
-                const ButtonSegment(
+                ButtonSegment(
                   value: AdminSection.logo,
-                  icon: Icon(Icons.image_outlined),
-                  label: Text('Logo'),
+                  icon: const Icon(Icons.image_outlined),
+                  label: Text(tx(context, 'logo')),
                 ),
                 if (widget.isDev)
-                  const ButtonSegment(
+                  ButtonSegment(
                     value: AdminSection.schools,
-                    icon: Icon(Icons.school_outlined),
-                    label: Text('Schulen'),
+                    icon: const Icon(Icons.school_outlined),
+                    label: Text(tx(context, 'schools')),
                   ),
               ],
               selected: {section},
@@ -1959,7 +2486,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _usersBody() {
-    if (users.isEmpty && !loading) return const Text('Keine Nutzer gefunden.');
+    if (users.isEmpty && !loading) return Text(tx(context, 'no_users'));
     return Column(
       children: [
         for (final raw in users)
@@ -1975,30 +2502,31 @@ class _AdminScreenState extends State<AdminScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  tooltip: 'Passwort setzen',
+                  tooltip: tx(context, 'set_password'),
                   onPressed: () => _changePassword(raw),
                   icon: const Icon(Icons.password),
                 ),
                 if (widget.isDev)
                   IconButton(
-                    tooltip: 'Rolle und Schule bearbeiten',
+                    tooltip: tx(context, 'edit_role_school'),
                     onPressed: () => _editUserAccess(raw),
                     icon: const Icon(Icons.manage_accounts_outlined),
                   ),
                 if (widget.adminRole == 'admin' || widget.adminRole == 'dev')
                   IconButton(
-                    tooltip: 'Klasse setzen',
+                    tooltip: tx(context, 'set_class'),
                     onPressed: () => _setUserClass(raw),
                     icon: const Icon(Icons.class_outlined),
                   ),
                 if (_hasProLevel(raw))
                   IconButton(
-                    tooltip: 'Pros verifizieren',
+                    tooltip: tx(context, 'verify_pros'),
                     onPressed: () => _verifyPros(raw),
                     icon: const Icon(Icons.verified_outlined),
                   ),
                 IconButton(
-                  tooltip: raw['banned'] == true ? 'Entsperren' : 'Sperren',
+                  tooltip:
+                      raw['banned'] == true ? tx(context, 'unban') : tx(context, 'ban'),
                   onPressed: () => _setBanned(raw),
                   icon: Icon(
                     raw['banned'] == true
@@ -2017,16 +2545,30 @@ class _AdminScreenState extends State<AdminScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(_inviteLicenseText()),
+        const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: loading ? null : _createInviteCode,
-            icon: const Icon(Icons.add),
-            label: const Text('Code erstellen'),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.icon(
+                onPressed: loading ? null : _createInviteCode,
+                icon: const Icon(Icons.add),
+                label: Text(tx(context, 'create_code')),
+              ),
+              if (widget.isDev)
+                OutlinedButton.icon(
+                  onPressed: loading ? null : _editInviteCodeLimits,
+                  icon: const Icon(Icons.key_outlined),
+                  label: Text(tx(context, 'licenses')),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
-        if (codes.isEmpty && !loading) const Text('Keine offenen Codes.'),
+        if (codes.isEmpty && !loading) Text(tx(context, 'no_open_codes')),
         for (final raw in codes)
           AdminCard(
             title: raw['code']?.toString() ?? '',
@@ -2036,12 +2578,12 @@ class _AdminScreenState extends State<AdminScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  tooltip: 'Code kopieren',
+                  tooltip: tx(context, 'copy_code'),
                   onPressed: () => _copyCode(raw['code']?.toString() ?? ''),
                   icon: const Icon(Icons.copy),
                 ),
                 IconButton(
-                  tooltip: 'Code löschen',
+                  tooltip: tx(context, 'delete_code'),
                   onPressed: () => _deleteInviteCode(raw),
                   icon: const Icon(Icons.delete_outline),
                 ),
@@ -2054,7 +2596,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Widget _chatsBody() {
     if (chats.isEmpty && !loading) {
-      return const Text('Keine Chatdaten gefunden.');
+      return Text(tx(context, 'no_chat_data'));
     }
     return Column(
       children: [
@@ -2062,10 +2604,10 @@ class _AdminScreenState extends State<AdminScreen> {
           AdminCard(
             title: raw['label']?.toString() ?? raw['subject']?.toString() ?? '',
             subtitle:
-                '${raw['message_count'] ?? 0} Nachrichten · ${raw['rating_count'] ?? 0} Bewertungen · ${raw['report_count'] ?? 0} Meldungen',
+                '${raw['message_count'] ?? 0} ${tx(context, 'messages')} · ${raw['rating_count'] ?? 0} ${tx(context, 'ratings')} · ${raw['report_count'] ?? 0} ${tx(context, 'reports')}',
             leading: Icons.forum_outlined,
             trailing: IconButton(
-              tooltip: 'Fachchat löschen',
+              tooltip: tx(context, 'delete_subject_chat'),
               onPressed: () => _deleteChat(raw as Map<String, dynamic>),
               icon: const Icon(Icons.delete_outline),
             ),
@@ -2074,15 +2616,15 @@ class _AdminScreenState extends State<AdminScreen> {
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'Gemeldete Nachrichten',
+            tx(context, 'reported_messages'),
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
         const SizedBox(height: 8),
         if (chatReports.isEmpty && !loading)
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text('Keine offenen Meldungen.'),
+            child: Text(tx(context, 'no_open_reports')),
           ),
         for (final raw in chatReports)
           AdminCard(
@@ -2091,7 +2633,7 @@ class _AdminScreenState extends State<AdminScreen> {
             subtitle: _reportSubtitle(raw as Map<String, dynamic>),
             leading: Icons.flag_outlined,
             trailing: IconButton(
-              tooltip: 'Meldung erledigen',
+              tooltip: tx(context, 'resolve_report'),
               onPressed: () => _resolveReport(raw),
               icon: const Icon(Icons.check_circle_outline),
             ),
@@ -2101,7 +2643,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _ratingsBody() {
-    if (ratings.isEmpty && !loading) return const Text('Keine Bewertungen.');
+    if (ratings.isEmpty && !loading) return Text(tx(context, 'no_ratings'));
     return Column(
       children: [
         for (final raw in ratings)
@@ -2111,7 +2653,7 @@ class _AdminScreenState extends State<AdminScreen> {
             subtitle: _ratingSubtitle(raw as Map<String, dynamic>),
             leading: Icons.star_outline,
             trailing: IconButton(
-              tooltip: 'Admin-Punkte bearbeiten',
+              tooltip: tx(context, 'edit_admin_points'),
               onPressed: () => _editRating(raw),
               icon: const Icon(Icons.edit_outlined),
             ),
@@ -2131,17 +2673,17 @@ class _AdminScreenState extends State<AdminScreen> {
             FilledButton.icon(
               onPressed: loading ? null : () => _editShopItem(),
               icon: const Icon(Icons.add),
-              label: const Text('Artikel erstellen'),
+              label: Text(tx(context, 'create_item')),
             ),
             OutlinedButton.icon(
               onPressed: loading ? null : _bulkCreateShopItems,
               icon: const Icon(Icons.playlist_add),
-              label: const Text('Massen Listung'),
+              label: Text(tx(context, 'bulk_listing')),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        if (shopItems.isEmpty && !loading) const Text('Keine Ladenartikel.'),
+        if (shopItems.isEmpty && !loading) Text(tx(context, 'no_shop_items')),
         for (final raw in shopItems)
           AdminCard(
             title: raw['title']?.toString() ?? '',
@@ -2151,12 +2693,12 @@ class _AdminScreenState extends State<AdminScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  tooltip: 'Bearbeiten',
+                  tooltip: tx(context, 'edit'),
                   onPressed: () => _editShopItem(raw),
                   icon: const Icon(Icons.edit_outlined),
                 ),
                 IconButton(
-                  tooltip: 'Löschen',
+                  tooltip: tx(context, 'delete'),
                   onPressed: () => _deleteShopItem(raw),
                   icon: const Icon(Icons.delete_outline),
                 ),
@@ -2176,11 +2718,11 @@ class _AdminScreenState extends State<AdminScreen> {
           child: FilledButton.icon(
             onPressed: loading ? null : () => _editTeacher(),
             icon: const Icon(Icons.add),
-            label: const Text('Kontakt erstellen'),
+            label: Text(tx(context, 'create_contact')),
           ),
         ),
         const SizedBox(height: 12),
-        if (teachers.isEmpty && !loading) const Text('Keine Lehrer-Kontakte.'),
+        if (teachers.isEmpty && !loading) Text(tx(context, 'no_teacher_contacts')),
         for (final raw in teachers)
           AdminCard(
             title: raw['email']?.toString() ?? '',
@@ -2190,12 +2732,12 @@ class _AdminScreenState extends State<AdminScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  tooltip: 'Bearbeiten',
+                  tooltip: tx(context, 'edit'),
                   onPressed: () => _editTeacher(raw),
                   icon: const Icon(Icons.edit_outlined),
                 ),
                 IconButton(
-                  tooltip: 'Löschen',
+                  tooltip: tx(context, 'delete'),
                   onPressed: () => _deleteTeacher(raw),
                   icon: const Icon(Icons.delete_outline),
                 ),
@@ -2213,7 +2755,7 @@ class _AdminScreenState extends State<AdminScreen> {
         if (widget.isDev) ...[
           DropdownButtonFormField<String>(
             value: selectedLogoSchool.isEmpty ? null : selectedLogoSchool,
-            decoration: const InputDecoration(labelText: 'Schule'),
+            decoration: InputDecoration(labelText: tx(context, 'school')),
             items: [
               for (final school in schools)
                 DropdownMenuItem(value: school, child: Text(school)),
@@ -2249,7 +2791,7 @@ class _AdminScreenState extends State<AdminScreen> {
           SelectableText(schoolLogoUrl),
           const SizedBox(height: 12),
         ] else
-          const Text('Noch kein Schul-Logo gesetzt.'),
+          Text(tx(context, 'no_logo')),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -2257,13 +2799,13 @@ class _AdminScreenState extends State<AdminScreen> {
             FilledButton.icon(
               onPressed: loading ? null : _editLogo,
               icon: const Icon(Icons.edit_outlined),
-              label: const Text('Logo-URL setzen'),
+              label: Text(tx(context, 'set_logo_url')),
             ),
             OutlinedButton.icon(
               onPressed:
                   loading || schoolLogoUrl.isEmpty ? null : () => _saveLogo(''),
               icon: const Icon(Icons.delete_outline),
-              label: const Text('Entfernen'),
+              label: Text(tx(context, 'remove')),
             ),
           ],
         ),
@@ -2272,7 +2814,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _schoolsBody() {
-    if (!widget.isDev) return const Text('Nur fuer Devs.');
+    if (!widget.isDev) return Text(tx(context, 'dev_only'));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2281,15 +2823,15 @@ class _AdminScreenState extends State<AdminScreen> {
           child: FilledButton.icon(
             onPressed: loading ? null : _createSchool,
             icon: const Icon(Icons.add),
-            label: const Text('Schule hinzufügen'),
+            label: Text(tx(context, 'add_school')),
           ),
         ),
         const SizedBox(height: 12),
-        if (schools.isEmpty) const Text('Noch keine Schulen.'),
+        if (schools.isEmpty) Text(tx(context, 'no_schools')),
         for (final school in schools)
           AdminCard(
             title: school,
-            subtitle: 'Schule',
+            subtitle: tx(context, 'school'),
             leading: Icons.school_outlined,
           ),
       ],
@@ -2303,9 +2845,9 @@ class _AdminScreenState extends State<AdminScreen> {
       if ((user['school']?.toString() ?? '').isNotEmpty)
         user['school'].toString(),
       if ((user['class_name']?.toString() ?? '').isNotEmpty)
-        "Klasse ${user['class_name']}",
+        "${tx(context, 'class')} ${user['class_name']}",
       if (proText.isNotEmpty) proText,
-      user['banned'] == true ? 'gesperrt' : 'aktiv',
+      user['banned'] == true ? tx(context, 'ban') : tx(context, 'active'),
     ];
     return parts.join(' · ');
   }
@@ -2324,18 +2866,17 @@ class _AdminScreenState extends State<AdminScreen> {
     final items = <String>[];
     void add(String label, String levelKey, String verifiedKey) {
       if (user[levelKey] == 'pro') {
-        items.add(
-            '$label ${user[verifiedKey] == true ? 'verifiziert' : 'offen'}');
+        items.add('$label ${user[verifiedKey] == true ? tx(context, 'verified') : tx(context, 'open')}');
       }
     }
 
-    add('Deutsch', 'level_german', 'pro_verified_german');
-    add('Mathe', 'level_math', 'pro_verified_math');
-    add('Englisch', 'level_english', 'pro_verified_english');
-    add('Biologie', 'level_biology', 'pro_verified_biology');
-    add('PGW', 'level_pgw', 'pro_verified_pgw');
-    add('Spanisch', 'level_spanish', 'pro_verified_spanish');
-    add('Kunst', 'level_art', 'pro_verified_art');
+    add(tx(context, 'german'), 'level_german', 'pro_verified_german');
+    add(tx(context, 'math'), 'level_math', 'pro_verified_math');
+    add(tx(context, 'english'), 'level_english', 'pro_verified_english');
+    add(tx(context, 'biology'), 'level_biology', 'pro_verified_biology');
+    add(tx(context, 'pgw'), 'level_pgw', 'pro_verified_pgw');
+    add(tx(context, 'spanish'), 'level_spanish', 'pro_verified_spanish');
+    add(tx(context, 'art'), 'level_art', 'pro_verified_art');
     return items.join(', ');
   }
 
@@ -2343,28 +2884,55 @@ class _AdminScreenState extends State<AdminScreen> {
     final school = code['school']?.toString() ?? '';
     final role = code['role']?.toString() ?? 'user';
     final createdAt = code['created_at']?.toString() ?? '';
-    final schoolText = school.isEmpty ? 'keine Schule' : school;
-    return 'Schule: $schoolText · Rolle: $role\nErstellt: $createdAt';
+    final schoolText = school.isEmpty ? tx(context, 'no_school') : school;
+    return '${tx(context, 'school')}: $schoolText · ${tx(context, 'role')}: $role\n${tx(context, 'created')}: $createdAt';
+  }
+
+  String _inviteLicenseText() {
+    final current = inviteCodeLimits['current'] as Map? ?? const {};
+    final limit = current['limit'] is int
+        ? current['limit'] as int
+        : int.tryParse(current['limit']?.toString() ?? '') ?? 0;
+    final active = current['active'] is int
+        ? current['active'] as int
+        : int.tryParse(current['active']?.toString() ?? '') ?? 0;
+    if (widget.isDev) {
+      String poolText(String key) {
+        final pool = inviteCodeLimits[key] as Map? ?? const {};
+        final poolLimit = pool['limit'] is int
+            ? pool['limit'] as int
+            : int.tryParse(pool['limit']?.toString() ?? '') ?? 0;
+        final poolActive = pool['active'] is int
+            ? pool['active'] as int
+            : int.tryParse(pool['active']?.toString() ?? '') ?? 0;
+        return '$poolActive/${poolLimit == 0 ? 'unbegrenzt' : poolLimit}';
+      }
+
+      return '${tx(context, 'license_pool')}: Admins ${poolText('admin')} · '
+          '${tx(context, 'teachers')} ${poolText('teacher')}';
+    }
+    if (limit == 0) return tx(context, 'role_licenses_unlimited');
+    return '${tx(context, 'role_licenses')}: $active / $limit ${tx(context, 'occupied')}';
   }
 
   String _ratingSubtitle(Map<String, dynamic> rating) {
     final duration = _durationLabel(rating['duration_seconds']);
     final startedAt = rating['started_at']?.toString() ?? '';
     final endedAt = rating['ended_at']?.toString() ?? '';
-    return '${rating['rating']}/5 Sterne · ${rating['comment'] ?? ''}'
+    return '${rating['rating']}/5 ${tx(context, 'stars')} · ${rating['comment'] ?? ''}'
         '${startedAt.isEmpty ? '' : '\nStart: $startedAt'}'
         '${endedAt.isEmpty ? '' : '\nEnde: $endedAt'}'
         '${duration.isEmpty ? '' : '\nDauer: $duration'}'
-        '\nAdmin-Punkte: ${rating['admin_points'] ?? 0} · ${rating['admin_note'] ?? ''}';
+        '\n${tx(context, 'admin_points')}: ${rating['admin_points'] ?? 0} · ${rating['admin_note'] ?? ''}';
   }
 
   String _reportSubtitle(Map<String, dynamic> report) {
     final reason = report['reason']?.toString() ?? '';
     final className = report['reported_class_name']?.toString() ?? '';
     return '"${report['body'] ?? ''}"'
-        '\nGemeldet von ${report['reporter_username'] ?? ''}'
-        '${reason.isEmpty ? '' : '\nGrund: $reason'}'
-        '${className.isEmpty ? '' : '\nKlasse: $className'}'
+        '\n${tx(context, 'reported_by')} ${report['reporter_username'] ?? ''}'
+        '${reason.isEmpty ? '' : '\n${tx(context, 'ban_reason')}: $reason'}'
+        '${className.isEmpty ? '' : '\n${tx(context, 'class')}: $className'}'
         '\n${report['created_at'] ?? ''}';
   }
 
@@ -2373,18 +2941,18 @@ class _AdminScreenState extends State<AdminScreen> {
         value is int ? value : int.tryParse(value?.toString() ?? '');
     if (seconds == null || seconds < 0) return '';
     final minutes = (seconds / 60).round();
-    if (minutes < 60) return '$minutes Min.';
+    if (minutes < 60) return '$minutes ${tx(context, 'minutes_short')}';
     final hours = minutes ~/ 60;
     final rest = minutes % 60;
-    return rest == 0 ? '$hours Std.' : '$hours Std. $rest Min.';
+    return rest == 0 ? '$hours ${tx(context, 'hours_short')}' : '$hours ${tx(context, 'hours_short')} $rest ${tx(context, 'minutes_short')}';
   }
 
   String _shopSubtitle(Map<String, dynamic> item) {
     final school = item['school']?.toString() ?? '';
-    final target = school.isEmpty ? 'alle Schulen' : school;
-    final state = item['active'] == true ? 'aktiv' : 'inaktiv';
+    final target = school.isEmpty ? tx(context, 'all_schools') : school;
+    final state = item['active'] == true ? tx(context, 'active') : tx(context, 'inactive');
     final description = item['description']?.toString() ?? '';
-    return '${item['points_price'] ?? 0} Punkte · $state · $target\n$description';
+    return '${item['points_price'] ?? 0} ${tx(context, 'points')} · $state · $target\n$description';
   }
 
   String _teacherSubtitle(Map<String, dynamic> teacher) {
@@ -2393,7 +2961,7 @@ class _AdminScreenState extends State<AdminScreen> {
         teacher['display_name'].toString(),
       if ((teacher['school']?.toString() ?? '').isNotEmpty)
         teacher['school'].toString(),
-      teacher['active'] == true ? 'aktiv' : 'inaktiv',
+      teacher['active'] == true ? tx(context, 'active') : tx(context, 'inactive'),
     ];
     return parts.join(' · ');
   }
@@ -2421,6 +2989,9 @@ class _AdminScreenState extends State<AdminScreen> {
           ),
         AdminSection.schools => await widget.api.getJson('/api/admin/schools'),
       };
+      final limitsData = section == AdminSection.codes
+          ? await widget.api.getJson('/api/admin/invite-code-limits')
+          : null;
       final reportsData = section == AdminSection.chats
           ? await widget.api.getJson('/api/admin/chat-reports')
           : null;
@@ -2432,6 +3003,7 @@ class _AdminScreenState extends State<AdminScreen> {
             break;
           case AdminSection.codes:
             codes = data['codes'] as List? ?? const [];
+            inviteCodeLimits = limitsData ?? const {};
             break;
           case AdminSection.chats:
             chats = data['chats'] as List? ?? const [];
@@ -2459,7 +3031,7 @@ class _AdminScreenState extends State<AdminScreen> {
         }
       });
     } catch (ex) {
-      if (mounted) setState(() => status = 'Fehler: $ex');
+      if (mounted) setState(() => status = '${tx(context, 'error_prefix')}: $ex');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -2490,7 +3062,7 @@ class _AdminScreenState extends State<AdminScreen> {
       await _load();
       if (mounted) setState(() => status = success);
     } catch (ex) {
-      if (mounted) setState(() => status = 'Fehler: $ex');
+      if (mounted) setState(() => status = '${tx(context, 'error_prefix')}: $ex');
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -2498,12 +3070,12 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _changePassword(Map<String, dynamic> user) async {
     final password = await _textDialog(
-      title: 'Passwort setzen',
-      label: 'Neues Passwort',
+      title: tx(context, 'set_password'),
+      label: tx(context, 'new_password'),
       obscure: true,
     );
     if (password == null || password.isEmpty) return;
-    await _run('Passwort gespeichert', () async {
+    await _run(tx(context, 'password_saved'), () async {
       await widget.api.postJson('/api/admin/users/password', {
         'user_id': user['id'],
         'password': password,
@@ -2516,24 +3088,24 @@ class _AdminScreenState extends State<AdminScreen> {
     String? message;
     if (ban) {
       message = await _textDialog(
-        title: 'Nutzer sperren',
-        label: 'Grund',
+        title: tx(context, 'ban_user'),
+        label: tx(context, 'ban_reason'),
         initialValue: user['banned_message']?.toString() ?? '',
         maxLength: 500,
       );
       if (message == null) return;
       if (message.trim().isEmpty) {
-        setState(() => status = 'Bitte einen Sperrgrund eingeben.');
+        setState(() => status = tx(context, 'ban_reason_required'));
         return;
       }
     } else {
       final ok = await _confirm(
-        'Nutzer entsperren?',
+        tx(context, 'unban_user_q'),
         user['username']?.toString() ?? '',
       );
       if (!ok) return;
     }
-    await _run(ban ? 'Nutzer gesperrt' : 'Nutzer entsperrt', () async {
+    await _run(ban ? tx(context, 'user_banned') : tx(context, 'user_unbanned'), () async {
       await widget.api.postJson('/api/admin/users/ban', {
         'user_id': user['id'],
         'ban': ban,
@@ -2546,20 +3118,20 @@ class _AdminScreenState extends State<AdminScreen> {
     await _loadSchools();
     final result = await _userAccessDialog(user);
     if (result == null) return;
-    await _run('Nutzer gespeichert', () async {
+    await _run(tx(context, 'user_saved'), () async {
       await widget.api.putJson('/api/admin/users/${user['id']}', result);
     });
   }
 
   Future<void> _setUserClass(Map<String, dynamic> user) async {
     final nextClass = await _textDialog(
-      title: 'Klasse setzen',
-      label: 'Klasse',
+      title: tx(context, 'set_class'),
+      label: tx(context, 'class'),
       initialValue: user['class_name']?.toString() ?? '',
       maxLength: 20,
     );
     if (nextClass == null) return;
-    await _run('Klasse gespeichert', () async {
+    await _run(tx(context, 'class_saved'), () async {
       await widget.api.postJson('/api/admin/users/class', {
         'user_id': user['id'],
         'class_name': nextClass.trim(),
@@ -2570,7 +3142,7 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _verifyPros(Map<String, dynamic> user) async {
     final result = await _proVerificationDialog(user);
     if (result == null) return;
-    await _run('Pro-Verifizierung gespeichert', () async {
+    await _run(tx(context, 'pro_verification_saved'), () async {
       await widget.api.postJson('/api/admin/users/pro-verification', {
         'user_id': user['id'],
         ...result,
@@ -2582,8 +3154,40 @@ class _AdminScreenState extends State<AdminScreen> {
     await _loadSchools();
     final result = await _inviteCodeDialog();
     if (result == null) return;
-    await _run('Code erstellt', () async {
+    await _run(tx(context, 'code_created'), () async {
       await widget.api.postJson('/api/admin/invite-codes', result);
+    });
+  }
+
+  Future<void> _editInviteCodeLimits() async {
+    final adminInitial = (inviteCodeLimits['admin_limit'] ?? 0).toString();
+    final teacherInitial = (inviteCodeLimits['teacher_limit'] ?? 0).toString();
+    final adminLimit = await _textDialog(
+      title: tx(context, 'admin_code_licenses'),
+      label: tx(context, 'unlimited_zero'),
+      initialValue: adminInitial,
+    );
+    if (adminLimit == null) return;
+    final teacherLimit = await _textDialog(
+      title: tx(context, 'teacher_code_licenses'),
+      label: tx(context, 'unlimited_zero'),
+      initialValue: teacherInitial,
+    );
+    if (teacherLimit == null) return;
+    final adminValue = int.tryParse(adminLimit.trim());
+    final teacherValue = int.tryParse(teacherLimit.trim());
+    if (adminValue == null ||
+        teacherValue == null ||
+        adminValue < 0 ||
+        teacherValue < 0) {
+      setState(() => status = tx(context, 'positive_numbers'));
+      return;
+    }
+    await _run(tx(context, 'code_licenses_saved'), () async {
+      await widget.api.postJson('/api/admin/invite-code-limits', {
+        'admin_limit': adminValue,
+        'teacher_limit': teacherValue,
+      });
     });
   }
 
@@ -2592,7 +3196,7 @@ class _AdminScreenState extends State<AdminScreen> {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Code kopiert')),
+      SnackBar(content: Text(tx(context, 'code_copied'))),
     );
   }
 
@@ -2600,11 +3204,11 @@ class _AdminScreenState extends State<AdminScreen> {
     final value = code['code']?.toString() ?? '';
     if (value.isEmpty) return;
     final ok = await _confirm(
-      'Einladungscode löschen?',
-      '$value wird gelöscht und kann danach nicht mehr benutzt werden.',
+      tx(context, 'delete_invite_code_q'),
+      '$value ${tx(context, 'delete_invite_code_msg')}',
     );
     if (!ok) return;
-    await _run('Code gelöscht', () async {
+    await _run(tx(context, 'code_deleted'), () async {
       await widget.api.deleteJson(
         '/api/admin/invite-codes/${Uri.encodeComponent(value)}',
       );
@@ -2614,8 +3218,8 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _editLogo() async {
     await _loadSchools();
     final value = await _textDialog(
-      title: 'Schul-Logo',
-      label: 'Bild-URL',
+      title: tx(context, 'school_logo'),
+      label: tx(context, 'image_url'),
       initialValue: schoolLogoUrl,
       maxLength: 1000,
     );
@@ -2624,7 +3228,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _saveLogo(String url) async {
-    await _run('Logo gespeichert', () async {
+    await _run(tx(context, 'logo_saved'), () async {
       await widget.api.postJson('/api/admin/app-settings', {
         'school_logo_url': url,
         if (widget.isDev) 'school': selectedLogoSchool,
@@ -2635,12 +3239,12 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _createSchool() async {
     final name = await _textDialog(
-      title: 'Schule hinzufügen',
-      label: 'Schulname',
+      title: tx(context, 'add_school'),
+      label: tx(context, 'school_name'),
       maxLength: 120,
     );
     if (name == null || name.trim().isEmpty) return;
-    await _run('Schule angelegt', () async {
+    await _run(tx(context, 'school_created'), () async {
       await widget.api.postJson('/api/admin/schools', {'name': name.trim()});
     });
     await _loadSchools();
@@ -2648,11 +3252,11 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _deleteChat(Map<String, dynamic> chat) async {
     final ok = await _confirm(
-      'Fachchat löschen?',
-      '${chat['label']} wird inklusive Nachrichten und Bewertungen gelöscht.',
+      tx(context, 'delete_subject_chat'),
+      '${chat['label']} ${tx(context, 'delete_chat_msg')}',
     );
     if (!ok) return;
-    await _run('Chat gelöscht', () async {
+    await _run(tx(context, 'chat_deleted'), () async {
       await widget.api.deleteJson(
         '/api/admin/delete_chat/${Uri.encodeComponent(chat['subject'].toString())}',
       );
@@ -2660,7 +3264,7 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<void> _resolveReport(Map<String, dynamic> report) async {
-    await _run('Meldung erledigt', () async {
+    await _run(tx(context, 'report_resolved'), () async {
       await widget.api.postJson(
         '/api/admin/chat-reports/${report['id']}/resolve',
         {},
@@ -2671,7 +3275,7 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _editRating(Map<String, dynamic> rating) async {
     final result = await _scoreDialog(rating);
     if (result == null) return;
-    await _run('Admin-Punkte gespeichert', () async {
+    await _run(tx(context, 'admin_points_saved'), () async {
       await widget.api.putJson('/api/admin/subject-score', {
         'subject': rating['subject'],
         'user_id': rating['user_id'],
@@ -2699,17 +3303,17 @@ class _AdminScreenState extends State<AdminScreen> {
     required ValueChanged<String> onChanged,
   }) {
     if (!widget.isDev) {
-      final label = school.trim().isEmpty ? 'Keine Schule gesetzt' : school;
+      final label = school.trim().isEmpty ? tx(context, 'no_school_set') : school;
       return InputDecorator(
-        decoration: const InputDecoration(labelText: 'Schule'),
+        decoration: InputDecoration(labelText: tx(context, 'school')),
         child: Text(label),
       );
     }
     return DropdownButtonFormField<String>(
       value: school,
-      decoration: const InputDecoration(labelText: 'Schule'),
+      decoration: InputDecoration(labelText: tx(context, 'school')),
       items: [
-        const DropdownMenuItem(value: '', child: Text('Keine')),
+        DropdownMenuItem(value: '', child: Text(tx(context, 'no_school'))),
         for (final value in schools)
           DropdownMenuItem(value: value, child: Text(value)),
       ],
@@ -2723,7 +3327,7 @@ class _AdminScreenState extends State<AdminScreen> {
     await _loadSchools();
     final result = await _shopDialog(item);
     if (result == null) return;
-    await _run(item == null ? 'Artikel erstellt' : 'Artikel gespeichert',
+    await _run(item == null ? tx(context, 'item_created') : tx(context, 'item_saved'),
         () async {
       if (item == null) {
         await widget.api.postJson('/api/admin/shop', result);
@@ -2743,11 +3347,11 @@ class _AdminScreenState extends State<AdminScreen> {
         .where((title) => title.isNotEmpty)
         .toList();
     if (titles.isEmpty) {
-      setState(() => status = 'Keine Artikel eingegeben.');
+      setState(() => status = tx(context, 'no_items_entered'));
       return;
     }
 
-    await _run('${titles.length} Artikel erstellt', () async {
+    await _run('${titles.length} ${tx(context, 'items_created')}', () async {
       for (final title in titles) {
         await widget.api.postJson('/api/admin/shop', {
           'title': title,
@@ -2765,9 +3369,9 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _deleteShopItem(Map<String, dynamic> item) async {
     final ok =
-        await _confirm('Artikel löschen?', item['title']?.toString() ?? '');
+        await _confirm(tx(context, 'delete_item_q'), item['title']?.toString() ?? '');
     if (!ok) return;
-    await _run('Artikel gelöscht', () async {
+    await _run(tx(context, 'item_deleted'), () async {
       await widget.api.deleteJson('/api/admin/shop/${item['id']}');
     });
   }
@@ -2777,7 +3381,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final result = await _teacherDialog(teacher);
     if (result == null) return;
     await _run(
-      teacher == null ? 'Kontakt erstellt' : 'Kontakt gespeichert',
+      teacher == null ? tx(context, 'contact_created') : tx(context, 'contact_saved'),
       () async {
         if (teacher == null) {
           await widget.api.postJson('/api/admin/teachers', result);
@@ -2791,11 +3395,11 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _deleteTeacher(Map<String, dynamic> teacher) async {
     final ok = await _confirm(
-      'Kontakt löschen?',
+      tx(context, 'delete_contact_q'),
       teacher['email']?.toString() ?? '',
     );
     if (!ok) return;
-    await _run('Kontakt gelöscht', () async {
+    await _run(tx(context, 'contact_deleted'), () async {
       await widget.api.deleteJson('/api/admin/teachers/${teacher['id']}');
     });
   }
@@ -2809,11 +3413,11 @@ class _AdminScreenState extends State<AdminScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Abbrechen'),
+                child: Text(tx(context, 'cancel')),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('OK'),
+                child: Text(tx(context, 'ok')),
               ),
             ],
           ),
@@ -2850,27 +3454,27 @@ class _AdminScreenState extends State<AdminScreen> {
     final result = await showDialog<ScoreEdit>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Admin-Punkte'),
+        title: Text(tx(context, 'admin_points')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: points,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Punkte'),
+              decoration: InputDecoration(labelText: tx(context, 'points')),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: note,
               maxLength: 500,
-              decoration: const InputDecoration(labelText: 'Notiz'),
+              decoration: InputDecoration(labelText: tx(context, 'note')),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
+            child: Text(tx(context, 'cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(
@@ -2878,7 +3482,7 @@ class _AdminScreenState extends State<AdminScreen> {
               ScoreEdit(
                   int.tryParse(points.text.trim()) ?? 0, note.text.trim()),
             ),
-            child: const Text('Speichern'),
+            child: Text(tx(context, 'save')),
           ),
         ],
       ),
@@ -2900,18 +3504,18 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(user['username']?.toString() ?? 'Nutzer'),
+          title: Text(user['username']?.toString() ?? tx(context, 'users')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
                 value: role,
-                decoration: const InputDecoration(labelText: 'Rolle'),
-                items: const [
-                  DropdownMenuItem(value: 'user', child: Text('User')),
-                  DropdownMenuItem(value: 'teacher', child: Text('Lehrer')),
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                  DropdownMenuItem(value: 'dev', child: Text('Dev')),
+                decoration: InputDecoration(labelText: tx(context, 'role')),
+                items: [
+                  DropdownMenuItem(value: 'user', child: Text(tx(context, 'user_role'))),
+                  DropdownMenuItem(value: 'teacher', child: Text(tx(context, 'teachers'))),
+                  DropdownMenuItem(value: 'admin', child: Text(tx(context, 'admin'))),
+                  const DropdownMenuItem(value: 'dev', child: Text('Dev')),
                 ],
                 onChanged: (value) {
                   if (value != null) setDialogState(() => role = value);
@@ -2920,7 +3524,7 @@ class _AdminScreenState extends State<AdminScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: school.isEmpty ? null : school,
-                decoration: const InputDecoration(labelText: 'Schule'),
+                decoration: InputDecoration(labelText: tx(context, 'school')),
                 items: [
                   for (final value in schools)
                     DropdownMenuItem(value: value, child: Text(value)),
@@ -2934,14 +3538,14 @@ class _AdminScreenState extends State<AdminScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
                 'role': role,
                 'school': school,
               }),
-              child: const Text('Speichern'),
+              child: Text(tx(context, 'save')),
             ),
           ],
         ),
@@ -2965,48 +3569,48 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('Pros verifizieren: $username'),
+          title: Text('${tx(context, 'verify_pros')}: $username'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _proVerifyTile(
-                label: 'Deutsch',
+                label: tx(context, 'german'),
                 level: user['level_german'],
                 value: german,
                 onChanged: (value) => setDialogState(() => german = value),
               ),
               _proVerifyTile(
-                label: 'Mathe',
+                label: tx(context, 'math'),
                 level: user['level_math'],
                 value: math,
                 onChanged: (value) => setDialogState(() => math = value),
               ),
               _proVerifyTile(
-                label: 'Englisch',
+                label: tx(context, 'english'),
                 level: user['level_english'],
                 value: english,
                 onChanged: (value) => setDialogState(() => english = value),
               ),
               _proVerifyTile(
-                label: 'Biologie',
+                label: tx(context, 'biology'),
                 level: user['level_biology'],
                 value: biology,
                 onChanged: (value) => setDialogState(() => biology = value),
               ),
               _proVerifyTile(
-                label: 'PGW',
+                label: tx(context, 'pgw'),
                 level: user['level_pgw'],
                 value: pgw,
                 onChanged: (value) => setDialogState(() => pgw = value),
               ),
               _proVerifyTile(
-                label: 'Spanisch',
+                label: tx(context, 'spanish'),
                 level: user['level_spanish'],
                 value: spanish,
                 onChanged: (value) => setDialogState(() => spanish = value),
               ),
               _proVerifyTile(
-                label: 'Kunst',
+                label: tx(context, 'art'),
                 level: user['level_art'],
                 value: art,
                 onChanged: (value) => setDialogState(() => art = value),
@@ -3016,7 +3620,7 @@ class _AdminScreenState extends State<AdminScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
@@ -3028,7 +3632,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'spanish': spanish,
                 'art': art,
               }),
-              child: const Text('Speichern'),
+              child: Text(tx(context, 'save')),
             ),
           ],
         ),
@@ -3049,7 +3653,7 @@ class _AdminScreenState extends State<AdminScreen> {
       value: isPro && value,
       onChanged: isPro ? (next) => onChanged(next == true) : null,
       title: Text(label),
-      subtitle: Text(isPro ? 'Pro-Level' : 'Kein Pro-Level'),
+      subtitle: Text(isPro ? 'Pro-Level' : tx(context, 'no_pro_level')),
     );
   }
 
@@ -3068,7 +3672,7 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Code erstellen'),
+          title: Text(tx(context, 'create_code')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -3079,7 +3683,7 @@ class _AdminScreenState extends State<AdminScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: role,
-                decoration: const InputDecoration(labelText: 'Rolle'),
+                decoration: InputDecoration(labelText: tx(context, 'role')),
                 items: [
                   for (final value in roles)
                     DropdownMenuItem(value: value, child: Text(value)),
@@ -3093,14 +3697,14 @@ class _AdminScreenState extends State<AdminScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
                 'school': school,
                 'role': role,
               }),
-              child: const Text('Erstellen'),
+              child: Text(tx(context, 'create')),
             ),
           ],
         ),
@@ -3137,31 +3741,31 @@ class _AdminScreenState extends State<AdminScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title:
-              Text(item == null ? 'Artikel erstellen' : 'Artikel bearbeiten'),
+              Text(item == null ? tx(context, 'create_item') : tx(context, 'edit_item')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: title,
-                  decoration: const InputDecoration(labelText: 'Titel'),
+                  decoration: InputDecoration(labelText: tx(context, 'title')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: description,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Beschreibung'),
+                  decoration: InputDecoration(labelText: tx(context, 'description')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: priceHint,
-                  decoration: const InputDecoration(labelText: 'Preis-Hinweis'),
+                  decoration: InputDecoration(labelText: tx(context, 'price_hint')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: points,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Punktepreis'),
+                  decoration: InputDecoration(labelText: tx(context, 'points_price')),
                 ),
                 const SizedBox(height: 12),
                 _schoolControl(
@@ -3172,21 +3776,21 @@ class _AdminScreenState extends State<AdminScreen> {
                 TextField(
                   controller: className,
                   readOnly: widget.adminRole == 'teacher',
-                  decoration: const InputDecoration(
-                    labelText: 'Klasse (leer = alle Klassen)',
+                  decoration: InputDecoration(
+                    labelText: tx(context, 'class_all'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: sort,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Sortierung'),
+                  decoration: InputDecoration(labelText: tx(context, 'sort_order')),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: active,
                   onChanged: (value) => setDialogState(() => active = value),
-                  title: const Text('Aktiv'),
+                  title: Text(tx(context, 'active')),
                 ),
               ],
             ),
@@ -3194,7 +3798,7 @@ class _AdminScreenState extends State<AdminScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
@@ -3207,7 +3811,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'sort_order': int.tryParse(sort.text.trim()) ?? 0,
                 'active': active,
               }),
-              child: const Text('Speichern'),
+              child: Text(tx(context, 'save')),
             ),
           ],
         ),
@@ -3236,7 +3840,7 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Massen Listung'),
+          title: Text(tx(context, 'bulk_listing')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -3245,21 +3849,21 @@ class _AdminScreenState extends State<AdminScreen> {
                   controller: titles,
                   minLines: 6,
                   maxLines: 10,
-                  decoration: const InputDecoration(
-                    labelText: 'Artikel',
-                    hintText: 'Ein Artikel pro Zeile',
+                  decoration: InputDecoration(
+                    labelText: tx(context, 'items'),
+                    hintText: tx(context, 'one_item_per_line'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: priceHint,
-                  decoration: const InputDecoration(labelText: 'Preis-Hinweis'),
+                  decoration: InputDecoration(labelText: tx(context, 'price_hint')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: points,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Punktepreis'),
+                  decoration: InputDecoration(labelText: tx(context, 'points_price')),
                 ),
                 const SizedBox(height: 12),
                 _schoolControl(
@@ -3270,15 +3874,15 @@ class _AdminScreenState extends State<AdminScreen> {
                 TextField(
                   controller: className,
                   readOnly: widget.adminRole == 'teacher',
-                  decoration: const InputDecoration(
-                    labelText: 'Klasse (leer = alle Klassen)',
+                  decoration: InputDecoration(
+                    labelText: tx(context, 'class_all'),
                   ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: active,
                   onChanged: (value) => setDialogState(() => active = value),
-                  title: const Text('Aktiv'),
+                  title: Text(tx(context, 'active')),
                 ),
               ],
             ),
@@ -3286,7 +3890,7 @@ class _AdminScreenState extends State<AdminScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
@@ -3301,7 +3905,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'class_name': className.text.trim(),
                 'active': active,
               }),
-              child: const Text('Erstellen'),
+              child: Text(tx(context, 'create')),
             ),
           ],
         ),
@@ -3330,19 +3934,19 @@ class _AdminScreenState extends State<AdminScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(
-              teacher == null ? 'Kontakt erstellen' : 'Kontakt bearbeiten'),
+              teacher == null ? tx(context, 'create_contact') : tx(context, 'edit_contact')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: email,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'E-Mail'),
+                decoration: InputDecoration(labelText: tx(context, 'email')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: name,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: tx(context, 'name')),
               ),
               const SizedBox(height: 12),
               _schoolControl(
@@ -3353,14 +3957,14 @@ class _AdminScreenState extends State<AdminScreen> {
                 contentPadding: EdgeInsets.zero,
                 value: active,
                 onChanged: (value) => setDialogState(() => active = value),
-                title: const Text('Aktiv'),
+                title: Text(tx(context, 'active')),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Abbrechen'),
+              child: Text(tx(context, 'cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
@@ -3369,7 +3973,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'school': school,
                 'active': active,
               }),
-              child: const Text('Speichern'),
+              child: Text(tx(context, 'save')),
             ),
           ],
         ),
@@ -3473,11 +4077,11 @@ class _TextEntryDialogState extends State<TextEntryDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Abbrechen'),
+          child: Text(tx(context, 'cancel')),
         ),
         FilledButton(
           onPressed: _submit,
-          child: const Text('Speichern'),
+          child: Text(tx(context, 'save')),
         ),
       ],
     );
@@ -3506,10 +4110,10 @@ class LevelSelector extends StatelessWidget {
           Text(label, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 6),
           SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'pro', label: Text('Pro')),
-              ButtonSegment(value: 'medium', label: Text('Mittel')),
-              ButtonSegment(value: 'noob', label: Text('Noob')),
+            segments: [
+              const ButtonSegment(value: 'pro', label: Text('Pro')),
+              ButtonSegment(value: 'medium', label: Text(tx(context, 'medium'))),
+              const ButtonSegment(value: 'noob', label: Text('Noob')),
             ],
             selected: {value},
             onSelectionChanged: (set) => onChanged(set.first),
@@ -3545,45 +4149,47 @@ String levelLabel(Object? value) {
   };
 }
 
-String friendlyError(Object ex) {
+String friendlyError(BuildContext context, Object ex) {
   if (ex is ApiException) {
     if (ex.message != null && ex.message!.isNotEmpty) return ex.message!;
     return switch (ex.code) {
-      'shortpass' => 'Passwort zu kurz.',
-      'shortuser' => 'Benutzername zu kurz.',
-      'pwd_incomplete' => 'Bitte alle Passwortfelder ausfuellen.',
-      'pwd_current_wrong' => 'Aktuelles Passwort stimmt nicht.',
-      'ban_message_required' => 'Bitte einen Sperrgrund eingeben.',
-      'ban_message_too_long' => 'Sperrgrund ist zu lang.',
-      'mismatch' => 'Passwoerter stimmen nicht ueberein.',
-      'taken' => 'Benutzername ist schon vergeben.',
-      'invalid' => 'Login-Daten stimmen nicht.',
-      'bad_invite' => 'Einladungscode ist ungueltig.',
-      'bad_contact_email' => 'E-Mail-Adresse ist ungueltig.',
-      'notify_no_email' => 'Bitte erst eine E-Mail-Adresse eintragen.',
-      'invalid_school' => 'Schulname ist zu lang.',
-      'invalid_logo_url' => 'Logo-URL ist ungueltig.',
-      'invalid_role' => 'Rolle ist ungueltig.',
-      'invalid_datetime' => 'Bitte ein gültiges Datum wählen.',
-      'empty_location' => 'Bitte einen Ort eingeben.',
-      'invalid_location' => 'Der Ort ist zu lang.',
-      'permission' => 'Nur Pros können diesen Termin ändern.',
-      'no_appointment' => 'Es gibt keinen Termin.',
-      'not_started' => 'Der Termin wurde noch nicht gestartet.',
-      'already_ended' => 'Der Termin ist schon beendet.',
-      'appointment_ended' => 'Der Termin ist beendet. Der Chat wurde geleert.',
-      'room_closed' => 'Der Termin läuft schon. Der Raum ist geschlossen.',
-      'already_reported' => 'Du hast diese Nachricht schon gemeldet.',
-      'message_not_found' => 'Diese Nachricht gibt es nicht mehr.',
-      'own_message' => 'Eigene Nachrichten kannst du nicht melden.',
-      'reason_too_long' => 'Der Meldegrund ist zu lang.',
-      'report_not_found' => 'Diese Meldung gibt es nicht mehr.',
-      'not_ended' => 'Der Termin wurde noch nicht beendet.',
-      'need_comment' => 'Bei weniger als 4 Sternen ist ein Kommentar nötig.',
-      'not_in_room' => 'Du bist nicht mehr im Raum.',
-      'setup_done' => 'Es gibt schon ein Admin-Konto.',
-      'auth' => 'Bitte neu einloggen.',
-      'forbidden' => 'Dafuer hast du keine Berechtigung.',
+      'shortpass' => tx(context, 'password_short'),
+      'shortuser' => tx(context, 'username_short'),
+      'pwd_incomplete' => tx(context, 'all_password_fields'),
+      'pwd_current_wrong' => tx(context, 'current_password_wrong'),
+      'ban_message_required' => tx(context, 'ban_reason_required'),
+      'ban_message_too_long' => tx(context, 'ban_reason_too_long'),
+      'mismatch' => tx(context, 'password_mismatch'),
+      'taken' => tx(context, 'username_taken'),
+      'invalid' => tx(context, 'login_invalid'),
+      'bad_invite' => tx(context, 'bad_invite'),
+      'bad_contact_email' => tx(context, 'bad_contact_email'),
+      'notify_no_email' => tx(context, 'notify_no_email'),
+      'invalid_school' => tx(context, 'invalid_school'),
+      'invalid_logo_url' => tx(context, 'invalid_logo_url'),
+      'invalid_role' => tx(context, 'invalid_role'),
+      'invalid_limit' => tx(context, 'invalid_limit'),
+      'code_limit' => tx(context, 'code_limit'),
+      'invalid_datetime' => tx(context, 'invalid_datetime'),
+      'empty_location' => tx(context, 'empty_location'),
+      'invalid_location' => tx(context, 'invalid_location'),
+      'permission' => tx(context, 'permission'),
+      'no_appointment' => tx(context, 'no_appointment_error'),
+      'not_started' => tx(context, 'not_started'),
+      'already_ended' => tx(context, 'already_ended'),
+      'appointment_ended' => tx(context, 'chat_ended_local'),
+      'room_closed' => tx(context, 'room_closed_error'),
+      'already_reported' => tx(context, 'already_reported'),
+      'message_not_found' => tx(context, 'message_not_found'),
+      'own_message' => tx(context, 'own_message'),
+      'reason_too_long' => tx(context, 'reason_too_long'),
+      'report_not_found' => tx(context, 'report_not_found'),
+      'not_ended' => tx(context, 'not_ended'),
+      'need_comment' => tx(context, 'need_comment_local'),
+      'not_in_room' => tx(context, 'not_in_room'),
+      'setup_done' => tx(context, 'setup_done'),
+      'auth' => tx(context, 'auth'),
+      'forbidden' => tx(context, 'forbidden'),
       _ => ex.code,
     };
   }

@@ -208,8 +208,6 @@ def init_db():
 
     with closing(sqlite3.connect(DATABASE)) as db:
         db.row_factory = sqlite3.Row
-        invite_role = inv["role"] if inv["role"] in ROLES else "user"
-        invite_class = class_name_for_role(invite_role, inv["class_name"]) or ""
         db.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -426,6 +424,7 @@ def _ensure_invite_codes(db):
             school TEXT NOT NULL DEFAULT '',
             class_name TEXT NOT NULL DEFAULT '',
             role TEXT NOT NULL DEFAULT 'user',
+            created_by_role TEXT NOT NULL DEFAULT 'user',
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             used_at TEXT,
             used_user_id INTEGER
@@ -440,6 +439,17 @@ def _ensure_invite_codes(db):
         db.execute("ALTER TABLE invite_codes ADD COLUMN class_name TEXT NOT NULL DEFAULT ''")
     if "role" not in names:
         db.execute("ALTER TABLE invite_codes ADD COLUMN role TEXT NOT NULL DEFAULT 'user'")
+    if "created_by_role" not in names:
+        db.execute("ALTER TABLE invite_codes ADD COLUMN created_by_role TEXT NOT NULL DEFAULT 'user'")
+        db.execute(
+            """
+            UPDATE invite_codes
+            SET created_by_role = COALESCE(
+                (SELECT role FROM users WHERE users.id = invite_codes.created_by),
+                'user'
+            )
+            """
+        )
     db.execute("UPDATE invite_codes SET class_name = lower(replace(trim(class_name), ' ', ''))")
     db.commit()
 
@@ -511,6 +521,48 @@ def set_app_setting(db, key, value):
         """,
         (key, value),
     )
+
+
+def int_app_setting(db, key, default=0):
+    raw = app_setting(db, key, str(default))
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return default
+
+
+def invite_code_limit_key(role):
+    return f"invite_code_limit_{role}"
+
+
+def invite_code_limit_for_role(db, role):
+    if role not in ("admin", "teacher"):
+        return 0
+    return int_app_setting(db, invite_code_limit_key(role), 0)
+
+
+def active_invite_code_count_for_creator_role(db, role):
+    if role not in ("admin", "teacher"):
+        return 0
+    row = db.execute(
+        """
+        SELECT COUNT(*) AS c
+        FROM invite_codes
+        WHERE used_at IS NULL AND created_by_role = ?
+        """,
+        (role,),
+    ).fetchone()
+    return int(row["c"] if row else 0)
+
+
+def invite_code_quota_payload(db, role):
+    limit = invite_code_limit_for_role(db, role)
+    active = active_invite_code_count_for_creator_role(db, role)
+    return {
+        "limit": limit,
+        "active": active,
+        "remaining": None if limit <= 0 else max(0, limit - active),
+    }
 
 
 def school_logo_key(school):
@@ -1801,6 +1853,8 @@ def invite_redeem():
             db.rollback()
             return redirect("/einladung.html?flash=bad_invite")
 
+        invite_role = inv["role"] if inv["role"] in ROLES else "user"
+        invite_class = class_name_for_role(invite_role, inv["class_name"]) or ""
         db.execute(
             """
             INSERT INTO users (
@@ -1959,6 +2013,44 @@ def admin_invite_list():
     )
 
 
+@app.route("/api/admin/invite-code-limits", methods=["GET"])
+@admin_api
+def admin_invite_code_limits_get():
+    db = get_db()
+    role = session.get("role", "user")
+    payload = {
+        "admin_limit": invite_code_limit_for_role(db, "admin"),
+        "teacher_limit": invite_code_limit_for_role(db, "teacher"),
+        "admin": invite_code_quota_payload(db, "admin"),
+        "teacher": invite_code_quota_payload(db, "teacher"),
+        "current": invite_code_quota_payload(db, role),
+        "can_edit": is_dev_session(),
+    }
+    return jsonify(payload)
+
+
+@app.route("/api/admin/invite-code-limits", methods=["POST"])
+@admin_api
+def admin_invite_code_limits_post():
+    if not is_dev_session():
+        return jsonify(error="forbidden"), 403
+    data = request.get_json(silent=True) or {}
+    try:
+        admin_limit = max(0, int(data.get("admin_limit") or 0))
+        teacher_limit = max(0, int(data.get("teacher_limit") or 0))
+    except (TypeError, ValueError):
+        return jsonify(error="invalid_limit"), 400
+    db = get_db()
+    set_app_setting(db, invite_code_limit_key("admin"), str(admin_limit))
+    set_app_setting(db, invite_code_limit_key("teacher"), str(teacher_limit))
+    db.commit()
+    return jsonify(
+        ok=True,
+        admin_limit=admin_limit,
+        teacher_limit=teacher_limit,
+    )
+
+
 @app.route("/api/admin/invite-codes", methods=["POST"])
 @admin_api
 def admin_invite_create():
@@ -1970,7 +2062,7 @@ def admin_invite_create():
         return jsonify(error="invalid_role"), 400
     if class_name is None:
         return jsonify(error="invalid_class"), 400
-    
+
     db = get_db()
     if not is_dev_session():
         school = admin_school(db)
@@ -1983,6 +2075,9 @@ def admin_invite_create():
             if role != "user":
                 return jsonify(error="forbidden"), 403
             class_name = teacher_class
+        quota = invite_code_quota_payload(db, session.get("role", "user"))
+        if quota["limit"] > 0 and quota["active"] >= quota["limit"]:
+            return jsonify(error="code_limit", **quota), 429
     class_name = class_name_for_role(role, class_name)
     if class_name is None:
         return jsonify(error="invalid_class"), 400
@@ -1991,12 +2086,17 @@ def admin_invite_create():
     if school:
         db.execute("INSERT OR IGNORE INTO schools (name) VALUES (?)", (school,))
     uid = session["user_id"]
+    creator_role = session.get("role", "user")
     for _ in range(12):
         code = secrets.token_hex(6)
         try:
             db.execute(
-                "INSERT INTO invite_codes (code, created_by, school, class_name, role) VALUES (?, ?, ?, ?, ?)",
-                (code, uid, school, class_name, role),
+                """
+                INSERT INTO invite_codes
+                    (code, created_by, created_by_role, school, class_name, role)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (code, uid, creator_role, school, class_name, role),
             )
             db.commit()
             return jsonify(
